@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/microsoft/fabric-sdk-go/fabric"
+	fabcore "github.com/microsoft/fabric-sdk-go/fabric/core"
 	"github.com/microsoft/fabric-sdk-go/fabric/dataflow"
 	"github.com/microsoft/fabric-sdk-go/fabric/datapipeline"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -136,6 +138,22 @@ func TestLiveDataflow(t *testing.T) {
 	client := liveClient(t)
 	cs := liveSession(t, context.Background(), client)
 
+	// Creating a dataflow makes Fabric provision staging Lakehouse and
+	// Warehouse items that deleting the dataflow leaves behind; remove the
+	// ones that appear during this test.
+	before := stagingItems(t, client, ws)
+	t.Cleanup(func() {
+		items := fabcore.NewClientFactoryWithClient(*client).NewItemsClient()
+		for id, name := range stagingItems(t, client, ws) {
+			if _, ok := before[id]; ok {
+				continue
+			}
+			if _, err := items.DeleteItem(context.Background(), ws, id, nil); err != nil {
+				t.Errorf("cleanup: delete staging item %s: %v", name, err)
+			}
+		}
+	})
+
 	name := fmt.Sprintf("fabmcp_test_dataflow_%d", time.Now().Unix())
 	env, isErr := call(t, cs, "datafactory_create-dataflow", map[string]any{"workspace-id": ws, "display-name": name})
 	if isErr {
@@ -167,6 +185,23 @@ func TestLiveDataflow(t *testing.T) {
 	if df["displayName"] != name || df["type"] != "Dataflow" || df["workspaceId"] != ws {
 		t.Errorf("unexpected dataflow %s", jsonOf(df))
 	}
+}
+
+// stagingItems returns the ID and name of the workspace's dataflow staging
+// Lakehouses and Warehouses.
+func stagingItems(t *testing.T, client *fabric.Client, ws string) map[string]string {
+	t.Helper()
+	items, err := fabcore.NewClientFactoryWithClient(*client).NewItemsClient().ListItems(context.Background(), ws, nil)
+	if err != nil {
+		t.Fatalf("list items: %v", err)
+	}
+	out := map[string]string{}
+	for _, it := range items {
+		if n := *it.DisplayName; strings.HasPrefix(n, "StagingLakehouseForDataflows_") || strings.HasPrefix(n, "StagingWarehouseForDataflows_") {
+			out[*it.ID] = n
+		}
+	}
+	return out
 }
 
 func mapKeys(m map[string]any) []string {
