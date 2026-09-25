@@ -67,5 +67,16 @@ func workspaceOf(id, nameOrID string) string {
 	return nameOrID
 }
 
-// errWorkspaceRequired is the validation message upstream's commands share.
-const errWorkspaceRequired = "Workspace identifier is required. Provide --workspace or --workspace-id."
+// Validation messages upstream's commands share.
+const (
+	errWorkspaceRequired = "Workspace identifier is required. Provide --workspace or --workspace-id."
+	errItemRequired      = "Item identifier is required. Provide --item or --item-id."
+)
+
+// nonEmptyPtr returns nil for "", else &s.
+func nonEmptyPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}

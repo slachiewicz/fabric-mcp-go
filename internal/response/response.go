@@ -28,8 +28,11 @@ type envelope struct {
 }
 
 // Success returns a 200 result carrying results.
-func Success(results any) *mcp.CallToolResult {
-	return result(false, envelope{Status: http.StatusOK, Message: "Success", Results: results})
+func Success(results any) *mcp.CallToolResult { return SuccessStatus(http.StatusOK, results) }
+
+// SuccessStatus is Success for commands that report another 2xx status.
+func SuccessStatus(status int, results any) *mcp.CallToolResult {
+	return result(false, envelope{Status: status, Message: "Success", Results: results})
 }
 
 // Fail returns an error result with no results, the shape upstream uses for

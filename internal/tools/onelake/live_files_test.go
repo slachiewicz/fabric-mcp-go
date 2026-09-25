@@ -118,12 +118,9 @@ func TestLiveFiles(t *testing.T) {
 		"requestId", "version", "requestServerEncrypted", "contentMd5", "contentCrc64", "encryptionScope",
 		"encryptionKeySha256", "versionId", "clientRequestId", "rootActivityId", "message")
 	results = env["results"].(map[string]any)
-	// Known difference from upstream: BlobPutCommand sets the envelope
-	// status to 201 Created; response.Success (the only success helper this
-	// area's foundation exposes) always reports 200, and internal/response
-	// is out of this task's scope to change.
-	if env["status"] != 200.0 {
-		t.Errorf("upload-file: status = %v, want 200", env["status"])
+	// Like upstream's BlobPutCommand, the envelope reports 201 Created.
+	if env["status"] != 201.0 {
+		t.Errorf("upload-file: status = %v, want 201", env["status"])
 	}
 	if results["blobPath"] != "Files/livetest/hello.txt" || results["contentLength"] != float64(len(content)) {
 		t.Errorf("upload-file: %s", jsonOf(results))

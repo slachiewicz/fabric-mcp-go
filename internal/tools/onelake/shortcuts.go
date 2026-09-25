@@ -145,15 +145,6 @@ type shortcutListResponse struct {
 	ContinuationURI   *string    `json:"continuationUri"`
 }
 
-// nonEmptyPtr returns nil for an empty string, else a pointer to it — the Go
-// equivalent of upstream leaving a nullable option unset.
-func nonEmptyPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
 // --- list-shortcuts ---
 
 type listShortcutsInput struct {

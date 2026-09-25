@@ -10,15 +10,21 @@ import (
 	"github.com/slachiewicz/fabric-mcp-go/internal/response"
 )
 
-// argError mirrors .NET's ArgumentException.
+// argError mirrors .NET's ArgumentException. Its Status and Type are the
+// default mapping (response.Error); errorResult overrides both.
 type argError struct{ msg string }
 
 func (e *argError) Error() string { return e.msg }
+func (*argError) Status() int     { return http.StatusBadRequest }
+func (*argError) Type() string    { return "ArgumentException" }
 
-// opError mirrors .NET's InvalidOperationException.
+// opError mirrors .NET's InvalidOperationException, which the default
+// mapping reports as 422.
 type opError struct{ msg string }
 
 func (e *opError) Error() string { return e.msg }
+func (*opError) Status() int     { return http.StatusUnprocessableEntity }
+func (*opError) Type() string    { return "InvalidOperationException" }
 
 // errorResult ports OneLakeCommandValidators, which most OneLake commands
 // use in place of the default message and status mapping. Commands that

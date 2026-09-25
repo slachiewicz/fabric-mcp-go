@@ -54,7 +54,6 @@ func (a *Area) registerTables(r *server.Registrar) {
 // Validation messages upstream's Table command ValidateOptions overrides
 // share; errWorkspaceRequired is the one already declared in onelake.go.
 const (
-	errItemRequired      = "Item identifier is required. Provide --item or --item-id."
 	errNamespaceRequired = "Namespace is required. Provide --namespace or --schema."
 )
 

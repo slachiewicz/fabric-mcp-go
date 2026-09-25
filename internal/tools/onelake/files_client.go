@@ -308,13 +308,6 @@ func asInt64(v any) int64 {
 	return 0
 }
 
-func nonEmptyPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
 // --- download-file / upload-file / delete-file / create-directory /
 // delete-directory service methods, ported from OneLakeService ---
 

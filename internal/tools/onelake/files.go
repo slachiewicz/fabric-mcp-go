@@ -77,9 +77,6 @@ func itemOf(id, nameOrID string) string {
 	return nameOrID
 }
 
-// errItemRequired is the validation message upstream's file commands share.
-const errItemRequired = "Item identifier is required. Provide --item or --item-id."
-
 // requireWorkspaceAndItem ports the ValidateOptions check every upstream
 // file command shares: both a workspace and an item identifier are
 // required, and multiple failures are joined the way .NET's ValidationResult
@@ -271,7 +268,7 @@ func (a *Area) uploadFile(ctx context.Context, _ *mcp.CallToolRequest, in upload
 		message = "File uploaded successfully (overwritten)."
 	}
 
-	return response.Success(blobPutCommandResult{
+	return response.SuccessStatus(http.StatusCreated, blobPutCommandResult{
 		WorkspaceID:            blob.WorkspaceID,
 		ItemID:                 blob.ItemID,
 		BlobPath:               blob.Path,
