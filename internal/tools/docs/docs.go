@@ -17,6 +17,22 @@ func New() *Area { return &Area{} }
 // Name implements server.Area.
 func (*Area) Name() string { return "docs" }
 
+// Description implements server.Describer, porting FabricDocsSetup's
+// CommandGroup description verbatim for namespace mode's "docs" proxy tool.
+func (*Area) Description() string {
+	return "Microsoft Fabric Documentation Tools - Access OpenAPI specifications, best practices, " +
+		"and example files for Microsoft Fabric APIs. Use this tool when you need to:\n" +
+		"- Discover available Fabric item types and their API specifications\n" +
+		"- Retrieve detailed OpenAPI documentation for specific item types\n" +
+		"- Access best practice guidance for Fabric development\n" +
+		"- Get example API request/response files for implementation reference\n" +
+		"This tool provides read-only access to Microsoft Fabric documentation and does NOT " +
+		"interact with live Fabric resources or require authentication."
+}
+
+// Title implements server.Describer, porting FabricDocsSetup's CommandGroup title.
+func (*Area) Title() string { return "Microsoft Fabric Documentation" }
+
 // annotations builds the ToolAnnotations for one tool in this area, porting
 // the CommandMetadata every upstream command here declares: read-only,
 // non-destructive, idempotent, and closed-world (the embedded resource

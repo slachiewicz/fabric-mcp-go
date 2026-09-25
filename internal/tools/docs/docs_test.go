@@ -16,12 +16,15 @@ import (
 // the pattern used throughout the go-sdk's own tests.
 func connect(t *testing.T) *mcp.ClientSession {
 	t.Helper()
-	s, err := server.New(server.Options{}, docs.New())
+	ctx := t.Context()
+	// This suite exercises the docs_* tools directly, so it asks for mode
+	// "all" explicitly rather than relying on the default (now "namespace",
+	// which would collapse them into one "docs" proxy tool).
+	s, err := server.New(ctx, server.Options{Mode: server.ModeAll}, docs.New())
 	if err != nil {
 		t.Fatalf("server.New: %v", err)
 	}
 	t1, t2 := mcp.NewInMemoryTransports()
-	ctx := t.Context()
 	if _, err := s.Connect(ctx, t1, nil); err != nil {
 		t.Fatalf("server.Connect: %v", err)
 	}
