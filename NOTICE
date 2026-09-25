@@ -1,0 +1,6 @@
+fabric-mcp-go is a Go port of the Microsoft Fabric MCP Server
+(https://github.com/microsoft/mcp/tree/main/servers/Fabric.Mcp.Server).
+
+Portions derived from that project, and the files under
+internal/tools/docs/resources/, are Copyright (c) Microsoft Corporation
+and licensed under the MIT License.
