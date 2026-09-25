@@ -3,7 +3,7 @@
 A Go implementation of the [Microsoft Fabric MCP Server](https://github.com/microsoft/mcp/tree/main/servers/Fabric.Mcp.Server).
 It keeps the upstream tool names, parameters and result format, so an existing `mcp.json` entry can point at this binary instead.
 
-Status: work in progress. Only the `docs_*` tools are done so far; OneLake, core and Data Factory tools follow.
+Status: work in progress. The `docs_*` and `core_*` tools are done; Data Factory and OneLake tools follow. Fabric API tools sign in with the Azure default credential chain (for example `az login`), falling back to a browser sign-in.
 
 ## Build and run
 

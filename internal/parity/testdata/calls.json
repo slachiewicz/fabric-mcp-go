@@ -61,5 +61,42 @@
     "args": {
       "item-type": "nosuchtype"
     }
+  },
+  {
+    "tool": "core_search-catalog",
+    "args": {
+      "search": "polytable_lh",
+      "page-size": 50
+    }
+  },
+  {
+    "tool": "core_search-catalog",
+    "args": {
+      "search": "polytable",
+      "page-size": 1
+    },
+    "pathsOnly": true
+  },
+  {
+    "tool": "core_search-catalog",
+    "args": {
+      "page-size": 0
+    }
+  },
+  {
+    "tool": "core_create-item",
+    "args": {
+      "display-name": "x",
+      "item-type": "Lakehouse"
+    }
+  },
+  {
+    "tool": "core_create-item",
+    "args": {
+      "workspace-id": "00000000-0000-0000-0000-000000000000",
+      "display-name": "x",
+      "item-type": "Lakehouse"
+    },
+    "pathsOnly": true
   }
 ]

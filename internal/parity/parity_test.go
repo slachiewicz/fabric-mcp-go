@@ -46,7 +46,7 @@ import (
 
 // namespaces lists the tool namespaces this harness compares. Extend as
 // more areas land in internal/tools.
-var namespaces = []string{"docs"}
+var namespaces = []string{"docs", "core"}
 
 const (
 	ourCmdImportPath = "github.com/slachiewicz/fabric-mcp-go/cmd/fabmcp"
@@ -291,6 +291,9 @@ type toolCall struct {
 	// Unordered compares arrays of strings as sets. Use it where the order
 	// comes from .NET resource enumeration, which embed.FS can't reproduce.
 	Unordered bool `json:"unordered"`
+	// PathsOnly skips the value comparison, for results that carry request
+	// IDs or other per-call values.
+	PathsOnly bool `json:"pathsOnly"`
 }
 
 func loadCalls(t *testing.T) []toolCall {
@@ -357,7 +360,7 @@ func compareCall(t *testing.T, ctx context.Context, refSess, ourSess *mcp.Client
 	if err != nil {
 		t.Fatalf("marshal our result: %v", err)
 	}
-	if len(refJSON) < fullCompareLimit && len(ourJSON) < fullCompareLimit && !bytes.Equal(refJSON, ourJSON) {
+	if !call.PathsOnly && len(refJSON) < fullCompareLimit && len(ourJSON) < fullCompareLimit && !bytes.Equal(refJSON, ourJSON) {
 		t.Errorf("result values differ:\n  reference: %s\n  ours:      %s", refJSON, ourJSON)
 	}
 }

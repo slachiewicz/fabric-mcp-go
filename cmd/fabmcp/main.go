@@ -12,9 +12,14 @@ import (
 	"os/signal"
 	"strings"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
+	"github.com/microsoft/fabric-sdk-go/fabric"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/slachiewicz/fabric-mcp-go/internal/auth"
 	"github.com/slachiewicz/fabric-mcp-go/internal/server"
+	"github.com/slachiewicz/fabric-mcp-go/internal/tools/core"
 	"github.com/slachiewicz/fabric-mcp-go/internal/tools/docs"
 )
 
@@ -55,7 +60,17 @@ func run(args []string) error {
 	// stdout carries the protocol; logs go to stderr.
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})))
 
-	s, err := server.New(opts, docs.New())
+	cred, err := auth.NewCredential()
+	if err != nil {
+		return err
+	}
+	client, err := fabric.NewClient(cred, nil, &fabric.ClientOptions{
+		ClientOptions: azcore.ClientOptions{Telemetry: policy.TelemetryOptions{ApplicationID: "fabric-mcp-go/" + server.Version}},
+	})
+	if err != nil {
+		return err
+	}
+	s, err := server.New(opts, docs.New(), core.New(client))
 	if err != nil {
 		return err
 	}
