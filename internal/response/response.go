@@ -46,6 +46,26 @@ type Exception interface {
 	Type() string
 }
 
+// HTTPError mirrors .NET's HttpRequestException. Status is 0 when the
+// exception carries no status code.
+type HTTPError struct {
+	Status int
+	Msg    string
+}
+
+func (e *HTTPError) Error() string { return e.Msg }
+
+// Exc returns the envelope upstream's HandleException builds: message is
+// the command's error message, raw the exception's own message and typ its
+// .NET type name.
+func Exc(status int, typ, message, raw string) *mcp.CallToolResult {
+	return result(true, envelope{
+		Status:  status,
+		Message: message + troubleshooting,
+		Results: map[string]string{"message": raw, "type": typ},
+	})
+}
+
 // Error returns the result upstream's HandleException produces for err.
 func Error(err error) *mcp.CallToolResult {
 	status, typ, msg := http.StatusInternalServerError, "Exception", err.Error()
@@ -53,6 +73,7 @@ func Error(err error) *mcp.CallToolResult {
 		exc     Exception
 		credErr *auth.CredentialError
 		apiErr  *fabcore.ResponseError
+		httpErr *HTTPError
 	)
 	switch {
 	case errors.As(err, &exc):
@@ -74,15 +95,17 @@ func Error(err error) *mcp.CallToolResult {
 			Message: "Service unavailable or network connectivity issues. Details: " + msg + troubleshooting,
 			Results: map[string]string{"message": msg, "type": typ},
 		})
+	case errors.As(err, &httpErr):
+		status, typ = httpErr.Status, "HttpRequestException"
+		if status == 0 {
+			status = http.StatusServiceUnavailable
+		}
+		msg = "Service unavailable or network connectivity issues. Details: " + err.Error()
 	case errors.Is(err, context.DeadlineExceeded), errors.Is(err, context.Canceled):
 		status, typ = http.StatusGatewayTimeout, "TaskCanceledException"
 		msg = "The operation timed out or was canceled. Details: " + strings.TrimSuffix(err.Error(), ".")
 	}
-	return result(true, envelope{
-		Status:  status,
-		Message: msg + troubleshooting,
-		Results: map[string]string{"message": err.Error(), "type": typ},
-	})
+	return Exc(status, typ, msg, err.Error())
 }
 
 // apiErrorMessage formats a Fabric API error the way upstream's

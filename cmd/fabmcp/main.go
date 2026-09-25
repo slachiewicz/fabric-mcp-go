@@ -21,6 +21,7 @@ import (
 	"github.com/slachiewicz/fabric-mcp-go/internal/server"
 	"github.com/slachiewicz/fabric-mcp-go/internal/tools/core"
 	"github.com/slachiewicz/fabric-mcp-go/internal/tools/docs"
+	"github.com/slachiewicz/fabric-mcp-go/internal/tools/onelake"
 )
 
 func main() {
@@ -70,7 +71,7 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
-	s, err := server.New(opts, docs.New(), core.New(client))
+	s, err := server.New(opts, docs.New(), core.New(client), onelake.New(cred))
 	if err != nil {
 		return err
 	}
