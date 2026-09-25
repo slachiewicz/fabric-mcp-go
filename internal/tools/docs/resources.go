@@ -95,6 +95,11 @@ func (e *notFoundError) Error() string {
 	return fmt.Sprintf("No resources match pattern '%s'. (Parameter 'resourcePattern')", e.pattern)
 }
 
+// Status and Type implement response.Exception: upstream reports an
+// ArgumentException as 400.
+func (*notFoundError) Status() int  { return 400 }
+func (*notFoundError) Type() string { return "ArgumentException" }
+
 // findEmbeddedResource ports
 // Microsoft.Mcp.Core.Helpers.EmbeddedResourceHelper.FindEmbeddedResource:
 // pattern is an unanchored regular expression matched against every
