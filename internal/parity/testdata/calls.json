@@ -1,7 +1,8 @@
 [
   {
     "tool": "docs_list-item-types",
-    "args": {}
+    "args": {},
+    "unordered": true
   },
   {
     "tool": "docs_item-api-spec",

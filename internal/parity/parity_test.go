@@ -35,6 +35,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -287,6 +288,9 @@ func fetchTools(t *testing.T, ctx context.Context, label, path string, env []str
 type toolCall struct {
 	Tool string         `json:"tool"`
 	Args map[string]any `json:"args"`
+	// Unordered compares arrays of strings as sets. Use it where the order
+	// comes from .NET resource enumeration, which embed.FS can't reproduce.
+	Unordered bool `json:"unordered"`
 }
 
 func loadCalls(t *testing.T) []toolCall {
@@ -342,6 +346,9 @@ func compareCall(t *testing.T, ctx context.Context, refSess, ourSess *mcp.Client
 		t.Errorf("result JSON key paths differ: %s", diff)
 	}
 
+	if call.Unordered {
+		refVal, ourVal = sortStringArrays(refVal), sortStringArrays(ourVal)
+	}
 	refJSON, err := json.Marshal(refVal)
 	if err != nil {
 		t.Fatalf("marshal reference result: %v", err)
@@ -353,6 +360,31 @@ func compareCall(t *testing.T, ctx context.Context, refSess, ourSess *mcp.Client
 	if len(refJSON) < fullCompareLimit && len(ourJSON) < fullCompareLimit && !bytes.Equal(refJSON, ourJSON) {
 		t.Errorf("result values differ:\n  reference: %s\n  ours:      %s", refJSON, ourJSON)
 	}
+}
+
+// sortStringArrays returns v with every array of strings sorted.
+func sortStringArrays(v any) any {
+	switch x := v.(type) {
+	case map[string]any:
+		for k, e := range x {
+			x[k] = sortStringArrays(e)
+		}
+	case []any:
+		strs := make([]string, 0, len(x))
+		for i, e := range x {
+			x[i] = sortStringArrays(e)
+			if s, ok := e.(string); ok {
+				strs = append(strs, s)
+			}
+		}
+		if len(strs) == len(x) {
+			slices.Sort(strs)
+			for i, s := range strs {
+				x[i] = s
+			}
+		}
+	}
+	return v
 }
 
 // resultValue extracts the JSON value a call result carries: its
