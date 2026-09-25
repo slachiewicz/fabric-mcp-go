@@ -7,7 +7,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -301,10 +303,7 @@ type executeQueryInput struct {
 	Query       string `json:"query" jsonschema:"The M (Power Query) expression to execute."`
 }
 
-// querySummary mirrors upstream's QueryResultSummary. fabric-mcp-go doesn't
-// decode the Apache Arrow response body upstream parses into rows (see
-// arrowParsingError below), so Columns/EstimatedRowCount/StructuredSampleData
-// are always absent and BatchCount is always 0.
+// querySummary mirrors upstream's QueryResultSummary.
 type querySummary struct {
 	Columns              []string         `json:"columns,omitempty"`
 	EstimatedRowCount    *int             `json:"estimatedRowCount,omitempty"`
@@ -346,26 +345,13 @@ func (a *Area) executeQuery(ctx context.Context, _ *mcp.CallToolRequest, in exec
 		return response.Error(err), nil, nil
 	}
 
-	contentType := raw.Header.Get("Content-Type")
-	contentLength := len(body)
-	arrowErr := "Arrow IPC stream decoding is not implemented; fabric-mcp-go reports the raw response size only."
-	summary := querySummary{ArrowParsingSuccess: false, ArrowParsingError: &arrowErr}
-	data := map[string]any{
-		"table": map[string]any{
-			"format":      "Table",
-			"rowCount":    0,
-			"columnCount": 0,
-			"summary":     "0 rows × 0 columns",
-			"columns":     []any{},
-			"rows":        []any{},
-		},
-		"executionSummary": map[string]any{
-			"success":       true,
-			"contentType":   contentType,
-			"contentLength": contentLength,
-			"dataSize":      formatBytes(contentLength),
-		},
-	}
+	summary := readArrow(body)
+	data := arrowDataReport(summary, len(body), map[string]any{
+		"executedAt":  executedAt(time.Now()),
+		"workspaceId": in.WorkspaceID,
+		"dataflowId":  in.DataflowID,
+		"queryName":   in.QueryName,
+	})
 	return response.Success(map[string]any{"success": true, "data": data, "summary": summary}), nil, nil
 }
 
@@ -383,14 +369,17 @@ func wrapForDataflowQuery(query, queryName string) string {
 	return fmt.Sprintf("section Section1;\n\nshared %s = %s;", queryName, strings.TrimRight(query, " \t\n\r"))
 }
 
+// formatBytes ports upstream's FormatBytes, whose "0.##" format drops
+// trailing zeros.
 func formatBytes(n int) string {
+	trim := func(f float64) string { return strconv.FormatFloat(math.Round(f*100)/100, 'f', -1, 64) }
 	switch {
 	case n < 1024:
 		return fmt.Sprintf("%d B", n)
 	case n < 1024*1024:
-		return fmt.Sprintf("%.2f KB", float64(n)/1024)
+		return trim(float64(n)/1024) + " KB"
 	default:
-		return fmt.Sprintf("%.2f MB", float64(n)/(1024*1024))
+		return trim(float64(n)/(1024*1024)) + " MB"
 	}
 }
 

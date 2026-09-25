@@ -1,6 +1,7 @@
 package datafactory_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -11,6 +12,11 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
+	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/apache/arrow-go/v18/arrow/array"
+	"github.com/apache/arrow-go/v18/arrow/decimal128"
+	"github.com/apache/arrow-go/v18/arrow/ipc"
+	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/microsoft/fabric-sdk-go/fabric"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -210,8 +216,42 @@ func TestCreateDataflow(t *testing.T) {
 	}
 }
 
+// arrowStream returns an Arrow IPC stream with one row per column type
+// upstream's reader handles, plus a null.
+func arrowStream(t *testing.T) []byte {
+	t.Helper()
+	schema := arrow.NewSchema([]arrow.Field{
+		{Name: "name", Type: arrow.BinaryTypes.String, Nullable: true},
+		{Name: "n", Type: arrow.PrimitiveTypes.Int32, Nullable: true},
+		{Name: "price", Type: arrow.PrimitiveTypes.Float64},
+		{Name: "ok", Type: arrow.FixedWidthTypes.Boolean},
+		{Name: "day", Type: arrow.FixedWidthTypes.Date32},
+		{Name: "amount", Type: &arrow.Decimal128Type{Precision: 10, Scale: 2}},
+	}, nil)
+	b := array.NewRecordBuilder(memory.DefaultAllocator, schema)
+	defer b.Release()
+	b.Field(0).(*array.StringBuilder).AppendValues([]string{"a", ""}, []bool{true, false})
+	b.Field(1).(*array.Int32Builder).AppendValues([]int32{7, 0}, []bool{true, false})
+	b.Field(2).(*array.Float64Builder).AppendValues([]float64{1.5, 1e20}, nil)
+	b.Field(3).(*array.BooleanBuilder).AppendValues([]bool{true, false}, nil)
+	b.Field(4).(*array.Date32Builder).AppendValues([]arrow.Date32{arrow.Date32FromTime(time.Date(2026, 9, 26, 0, 0, 0, 0, time.UTC)), 0}, nil)
+	b.Field(5).(*array.Decimal128Builder).AppendValues([]decimal128.Num{decimal128.FromI64(1250), decimal128.FromI64(-5)}, nil)
+	rec := b.NewRecordBatch()
+	defer rec.Release()
+	var buf bytes.Buffer
+	w := ipc.NewWriter(&buf, ipc.WithSchema(schema))
+	if err := w.Write(rec); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
 func TestExecuteQuery(t *testing.T) {
 	var body map[string]any
+	stream := arrowStream(t)
 	cs := session(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/workspaces/ws1/dataflows/df1/executeQuery" {
 			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
@@ -219,7 +259,7 @@ func TestExecuteQuery(t *testing.T) {
 		b, _ := io.ReadAll(r.Body)
 		_ = json.Unmarshal(b, &body)
 		w.Header().Set("Content-Type", "application/vnd.apache.arrow.stream")
-		_, _ = w.Write([]byte("fake-arrow-bytes"))
+		_, _ = w.Write(stream)
 	})
 	env, isErr := call(t, cs, "datafactory_execute-query", map[string]any{
 		"workspace-id": "ws1", "dataflow-id": "df1", "query-name": "Query1", "query": "let a = 1 in a",
@@ -231,17 +271,36 @@ func TestExecuteQuery(t *testing.T) {
 		t.Errorf("request customMashupDocument = %q, want %q", got, want)
 	}
 	results, _ := env["results"].(map[string]any)
-	if results["success"] != true {
-		t.Errorf("results.success = %v, want true", results["success"])
-	}
 	summary, _ := results["summary"].(map[string]any)
-	if summary["arrowParsingSuccess"] != false {
-		t.Errorf("results.summary.arrowParsingSuccess = %v, want false", summary["arrowParsingSuccess"])
+	if got, want := jsonOf(summary), `{"arrowParsingSuccess":true,"batchCount":1,"columns":["name","n","price","ok","day","amount"],`+
+		`"estimatedRowCount":2,"structuredSampleData":{"amount":["12.50","-0.05"],"day":["2026-09-26","1970-01-01"],`+
+		`"n":[7,""],"name":["a",""],"ok":[true,false],"price":[1.5,100000000000000000000]}}`; got != want {
+		t.Errorf("summary = %s\nwant %s", got, want)
 	}
-	data, _ := results["data"].(map[string]any)
-	execSummary, _ := data["executionSummary"].(map[string]any)
-	if got, want := execSummary["contentLength"], float64(len("fake-arrow-bytes")); got != want {
-		t.Errorf("data.executionSummary.contentLength = %v, want %v", got, want)
+	table, _ := results["data"].(map[string]any)["table"].(map[string]any)
+	if got, want := jsonOf(table["rows"]), `[{"amount":"12.50","day":"2026-09-26","n":"7","name":"a","ok":"True","price":"1.5"},`+
+		`{"amount":"-0.05","day":"1970-01-01","n":"","name":"","ok":"False","price":"1E+20"}]`; got != want {
+		t.Errorf("rows = %s\nwant %s", got, want)
+	}
+	if got, want := jsonOf(table["columns"]), `[{"dataType":"String","name":"name"},{"dataType":"Int32","name":"n"},`+
+		`{"dataType":"String","name":"price"},{"dataType":"String","name":"ok"},{"dataType":"String","name":"day"},{"dataType":"String","name":"amount"}]`; got != want {
+		t.Errorf("columns = %s", got)
+	}
+	exec, _ := results["data"].(map[string]any)["executionSummary"].(map[string]any)
+	meta, _ := exec["executionMetadata"].(map[string]any)
+	if exec["contentLength"] != float64(len(stream)) || exec["contentType"] != "application/octet-stream" || meta["queryName"] != "Query1" {
+		t.Errorf("executionSummary = %s", jsonOf(exec))
+	}
+}
+
+func TestExecuteQueryNotArrow(t *testing.T) {
+	cs := session(t, func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("not arrow")) })
+	env, _ := call(t, cs, "datafactory_execute-query", map[string]any{
+		"workspace-id": "ws1", "dataflow-id": "df1", "query-name": "Q", "query": "1",
+	})
+	summary, _ := env["results"].(map[string]any)["summary"].(map[string]any)
+	if summary["arrowParsingSuccess"] != false || summary["arrowParsingError"] == nil {
+		t.Errorf("summary = %s", jsonOf(summary))
 	}
 }
 
