@@ -220,8 +220,6 @@ func (c *client) oneLake(ctx context.Context, method, url string, body any) ([]b
 
 // dataPlane sends a storage-scoped data plane request, ported from
 // SendDataPlaneRequestAsync. The caller closes the response body.
-//
-//nolint:unused // used by the files tools
 func (c *client) dataPlane(ctx context.Context, method, url string, body io.Reader, header http.Header) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
