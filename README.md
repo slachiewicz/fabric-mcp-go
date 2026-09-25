@@ -1,34 +1,118 @@
 # fabric-mcp-go
 
 A Go implementation of the [Microsoft Fabric MCP Server](https://github.com/microsoft/mcp/tree/main/servers/Fabric.Mcp.Server).
-It keeps the upstream tool names, parameters and result format, so an existing `mcp.json` entry can point at this binary instead.
+It exposes the same 48 tools with the same names, parameters and result format as upstream `main`, so an existing `mcp.json` entry can point at this binary instead.
+It ships as a single static binary with no .NET runtime.
 
-Status: work in progress. The `docs_*` and `core_*` tools are done; Data Factory and OneLake tools follow. Fabric API tools sign in with the Azure default credential chain (for example `az login`), falling back to a browser sign-in.
+The tools are grouped in four areas:
 
-## Build and run
+| Area | Tools | What they do |
+|---|---|---|
+| `docs` | 6 | Fabric OpenAPI specs, item definitions, best practices and API examples, embedded in the binary. No sign-in needed. |
+| `core` | 2 | Search the OneLake catalog and create items. |
+| `datafactory` | 7 | Pipelines, Dataflow Gen2 and M (Power Query) query execution. |
+| `onelake` | 33 | Workspaces and items, files and directories, the Table API, data access roles, shortcuts and settings. |
+
+## Install
+
+Download a release archive for your platform from [Releases](https://github.com/slachiewicz/fabric-mcp-go/releases), or build from source with Go 1.27.1 or later:
 
 ```bash
-go build -o fabmcp ./cmd/fabmcp
-./fabmcp server start
+go install github.com/slachiewicz/fabric-mcp-go/cmd/fabmcp@latest
 ```
+
+A container image is published as `ghcr.io/slachiewicz/fabric-mcp-go`.
+
+## Configure your MCP client
 
 To register the server in Claude Code:
 
 ```bash
-claude mcp add fabric -- /path/to/fabmcp server start
+claude mcp add fabric -- fabmcp server start
 ```
 
-## Parity with upstream
+For clients configured with `mcp.json`:
 
-The target is upstream `main`, not the latest npm release.
-`internal/parity` compares this server's `tools/list` with a snapshot of upstream's in `testdata/ref-tools.json`.
-To also compare tool calls, build upstream with the .NET 10 SDK and point `FABMCP_REF` at the binary:
+```json
+{
+  "mcpServers": {
+    "fabric": {
+      "command": "fabmcp",
+      "args": ["server", "start"]
+    }
+  }
+}
+```
+
+## Sign in
+
+Tools that call Fabric use the Azure default credential chain: environment variables, workload identity, managed identity, then the Azure CLI and Azure Developer CLI.
+The simplest setup is to run `az login` first.
+If none of those is available, the server opens a browser sign-in.
+Set `AZURE_TOKEN_CREDENTIALS` to pin one credential, as with upstream.
+
+Tools marked destructive, such as `onelake_delete-file`, ask for your consent through MCP elicitation before they run.
+Clients that don't support elicitation can't run them unless you pass `--dangerously-disable-elicitation`.
+
+## Server options
+
+`fabmcp server start` accepts upstream's options:
+
+| Option | Effect |
+|---|---|
+| `--mode namespace` | Default. One tool per area; the model discovers commands with `learn=true`. |
+| `--mode all` | One tool per command, for example `onelake_list-files`. |
+| `--mode single` | One `fabric` tool that routes to every area. |
+| `--namespace <area>` | Expose only this area. Repeatable. |
+| `--tool <name>` | Expose only this tool; implies `--mode all`. Repeatable. |
+| `--read-only` | Expose only read-only tools. |
+| `--transport http` | Serve streamable HTTP instead of stdio. |
+
+### HTTP transport
+
+Over HTTP the server authenticates callers against an Entra ID application.
+Set `AzureAd__TenantId` and `AzureAd__ClientId`, and optionally `ASPNETCORE_URLS` (default `http://localhost:5000`).
+Callers need the `Mcp.Tools.ReadWrite` scope or the `Mcp.Tools.ReadWrite.All` app permission, and the app must issue v2.0 access tokens.
+
+To call Fabric as the signed-in caller rather than as the server's own identity, add `--outgoing-auth-strategy UseOnBehalfOf` and set `AzureAd__ClientSecret`.
+
+For local testing only, `--dangerously-disable-http-incoming-auth` turns authentication off.
+The server then listens on `http://127.0.0.1:5001` and refuses non-loopback addresses unless `ALLOW_INSECURE_EXTERNAL_BINDING=true`.
+
+## Differences from upstream
+
+These are deliberate:
+
+- `datafactory_execute-query` decodes Arrow `Date32` columns as days. Upstream reads them as seconds, so every date comes back as 1970-01-01.
+- `datafactory_execute-query` polls the query as a long-running operation; upstream reads only the first response.
+- There's no telemetry.
+- `--mode consolidated` exposes no tools, as upstream does for Fabric.
+
+These are limitations:
+
+- Namespace and single mode don't use MCP sampling to guess a command from the intent when the command name is unknown.
+- `onelake_list-files` sorts names with Go's byte order, not .NET's culture-aware order, so names starting with punctuation can come out in a different order.
+
+## Development
+
+```bash
+go test ./...
+```
+
+`internal/parity` checks the tool list against a snapshot of upstream's in `testdata/ref-tools.json`.
+To also compare tool calls, build upstream `main` with the .NET 10 SDK and point `FABMCP_REF` at the binary:
 
 ```bash
 git clone --depth 1 https://github.com/microsoft/mcp.git
 dotnet build mcp/servers/Fabric.Mcp.Server/src/Fabric.Mcp.Server.csproj -c Release
 DOTNET_ROOT=~/.dotnet FABMCP_REF=$PWD/mcp/servers/Fabric.Mcp.Server/src/bin/Release/fabmcp \
   go test ./internal/parity/ -v
+```
+
+Tests tagged `live` create and delete items in a workspace you reserve for them:
+
+```bash
+FABMCP_E2E_WORKSPACE=<workspace-id> go test -tags live -p 1 ./... -run Live
 ```
 
 ## License
