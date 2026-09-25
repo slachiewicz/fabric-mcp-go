@@ -1,0 +1,36 @@
+version: 2
+
+project_name: fabric-mcp-go
+
+builds:
+  - id: fabmcp
+    main: ./cmd/fabmcp
+    binary: fabmcp
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X github.com/slachiewicz/fabric-mcp-go/internal/server.Version={{ .Version }}
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files: [LICENSE, NOTICE, README.md]
+
+checksum:
+  name_template: checksums.txt
+
+dockers_v2:
+  - images: [ghcr.io/slachiewicz/fabric-mcp-go]
+    tags: ["{{ .Version }}", latest]
+    platforms: [linux/amd64, linux/arm64]
+    labels:
+      org.opencontainers.image.source: https://github.com/slachiewicz/fabric-mcp-go
+      org.opencontainers.image.licenses: MIT
+
+changelog:
+  use: github
