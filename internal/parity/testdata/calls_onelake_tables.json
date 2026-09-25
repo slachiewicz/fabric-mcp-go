@@ -1,0 +1,17 @@
+[
+  {"tool": "onelake_get-table-config", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d"}},
+  {"tool": "onelake_get-table-config", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse"}},
+  {"tool": "onelake_list-table-namespaces", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse"}},
+  {"tool": "onelake_get-table-namespace", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "namespace": "dbo"}},
+  {"tool": "onelake_get-table-namespace", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "schema": "dbo"}},
+  {"tool": "onelake_list-tables", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "schema": "dbo"}},
+  {"tool": "onelake_get-table", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "namespace": "dbo", "table": "orders"}, "pathsOnly": true},
+
+  {"tool": "onelake_get-table-config", "args": {}},
+  {"tool": "onelake_list-tables", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse"}},
+  {"tool": "onelake_get-table-config", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item": "no-such-item-xyz"}},
+  {"tool": "onelake_get-table-config", "args": {"workspace": "polytable-e2e", "item": "no-such-item.Lakehouse"}},
+  {"tool": "onelake_get-table-config", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item": "polytable_lh.Lakehouse"}},
+  {"tool": "onelake_get-table-namespace", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "namespace": "no-such-ns"}},
+  {"tool": "onelake_get-table", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "namespace": "dbo", "table": "no-such-table"}}
+]
