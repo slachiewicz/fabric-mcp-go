@@ -138,19 +138,29 @@ func TestLiveDataflow(t *testing.T) {
 	client := liveClient(t)
 	cs := liveSession(t, context.Background(), client)
 
-	// Creating a dataflow makes Fabric provision staging Lakehouse and
-	// Warehouse items that deleting the dataflow leaves behind; remove the
-	// ones that appear during this test.
+	// Creating a dataflow makes Fabric provision a staging Lakehouse and
+	// Warehouse, asynchronously, that deleting the dataflow leaves behind.
+	// Wait for the ones this test caused and remove them.
 	before := stagingItems(t, client, ws)
 	t.Cleanup(func() {
 		items := fabcore.NewClientFactoryWithClient(*client).NewItemsClient()
-		for id, name := range stagingItems(t, client, ws) {
-			if _, ok := before[id]; ok {
-				continue
+		deadline := time.Now().Add(3 * time.Minute)
+		for {
+			added := map[string]string{}
+			for id, name := range stagingItems(t, client, ws) {
+				if _, ok := before[id]; !ok {
+					added[id] = name
+				}
 			}
-			if _, err := items.DeleteItem(context.Background(), ws, id, nil); err != nil {
-				t.Errorf("cleanup: delete staging item %s: %v", name, err)
+			if len(added) >= 2 || time.Now().After(deadline) {
+				for id, name := range added {
+					if _, err := items.DeleteItem(context.Background(), ws, id, nil); err != nil {
+						t.Errorf("cleanup: delete staging item %s: %v", name, err)
+					}
+				}
+				return
 			}
+			time.Sleep(10 * time.Second)
 		}
 	})
 
@@ -197,7 +207,8 @@ func stagingItems(t *testing.T, client *fabric.Client, ws string) map[string]str
 	}
 	out := map[string]string{}
 	for _, it := range items {
-		if n := *it.DisplayName; strings.HasPrefix(n, "StagingLakehouseForDataflows_") || strings.HasPrefix(n, "StagingWarehouseForDataflows_") {
+		if n := *it.DisplayName; (*it.Type == fabcore.ItemTypeLakehouse || *it.Type == fabcore.ItemTypeWarehouse) &&
+			(strings.HasPrefix(n, "StagingLakehouseForDataflows_") || strings.HasPrefix(n, "StagingWarehouseForDataflows_")) {
 			out[*it.ID] = n
 		}
 	}
