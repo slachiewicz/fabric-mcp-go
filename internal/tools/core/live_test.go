@@ -37,12 +37,15 @@ func TestLiveCreateItem(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := server.New(server.Options{}, core.New(client))
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	// This test calls core_create-item directly, so it asks for mode "all"
+	// explicitly rather than relying on the default (now "namespace", which
+	// would collapse it behind the "core" proxy tool).
+	s, err := server.New(ctx, server.Options{Mode: server.ModeAll}, core.New(client))
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
 	st, ct := mcp.NewInMemoryTransports()
 	if _, err := s.Connect(ctx, st, nil); err != nil {
 		t.Fatal(err)

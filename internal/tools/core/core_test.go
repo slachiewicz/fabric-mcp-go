@@ -38,12 +38,15 @@ func session(t *testing.T, cred azcore.TokenCredential, h http.HandlerFunc) *mcp
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := server.New(server.Options{}, core.New(client))
+	ctx := context.Background()
+	// This suite exercises the core_* tools directly, so it asks for mode
+	// "all" explicitly rather than relying on the default (now "namespace",
+	// which would collapse them into one "core" proxy tool).
+	s, err := server.New(ctx, server.Options{Mode: server.ModeAll}, core.New(client))
 	if err != nil {
 		t.Fatal(err)
 	}
 	st, ct := mcp.NewInMemoryTransports()
-	ctx := context.Background()
 	if _, err := s.Connect(ctx, st, nil); err != nil {
 		t.Fatal(err)
 	}

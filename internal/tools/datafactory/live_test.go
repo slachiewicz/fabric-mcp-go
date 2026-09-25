@@ -27,7 +27,7 @@ import (
 // credential chain via internal/auth).
 func liveSession(t *testing.T, ctx context.Context, client *fabric.Client) *mcp.ClientSession {
 	t.Helper()
-	s, err := server.New(server.Options{}, datafactory.New(client))
+	s, err := server.New(context.Background(), server.Options{Mode: server.ModeAll}, datafactory.New(client))
 	if err != nil {
 		t.Fatal(err)
 	}

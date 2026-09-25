@@ -44,6 +44,20 @@ func New(client *fabric.Client) *Area {
 	}
 }
 
+// Description implements server.Describer, porting DataFactoryAreaSetup's
+// CommandGroup description.
+func (*Area) Description() string {
+	return "Microsoft Fabric Data Factory Operations - Manage pipelines, dataflows, and workspaces.\n" +
+		"Use this tool when you need to:\n" +
+		"- List and manage workspaces\n" +
+		"- Create, get, list, and run pipelines\n" +
+		"- Work with dataflows and data transformations\n" +
+		"- Execute M (Power Query) expressions against dataflows"
+}
+
+// Title implements server.Describer; the upstream group has no title.
+func (*Area) Title() string { return "" }
+
 // Name implements server.Area.
 func (*Area) Name() string { return "datafactory" }
 

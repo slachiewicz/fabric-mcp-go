@@ -42,7 +42,7 @@ func session(t *testing.T, h http.HandlerFunc) *mcp.ClientSession {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := server.New(server.Options{}, datafactory.New(client))
+	s, err := server.New(context.Background(), server.Options{Mode: server.ModeAll}, datafactory.New(client))
 	if err != nil {
 		t.Fatal(err)
 	}

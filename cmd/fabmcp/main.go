@@ -1,6 +1,6 @@
 // Command fabmcp is a Go implementation of the Microsoft Fabric MCP Server.
 //
-// Usage: fabmcp server start [--transport stdio] [--mode all] [--namespace docs] [--tool name] [--read-only]
+// Usage: fabmcp server start [--transport stdio] [--mode namespace|single|consolidated|all] [--namespace docs] [--tool name] [--read-only]
 package main
 
 import (
@@ -44,7 +44,7 @@ func run(args []string) error {
 	var opts server.Options
 	var ns, tools multiFlag
 	transport := fs.String("transport", "stdio", "transport: stdio")
-	fs.StringVar(&opts.Mode, "mode", "all", "tool exposure mode: all")
+	fs.StringVar(&opts.Mode, "mode", "", "tool exposure mode: namespace (default), single, consolidated, all")
 	fs.Var(&ns, "namespace", "expose only this namespace; repeatable")
 	fs.Var(&tools, "tool", "expose only this tool; repeatable")
 	fs.BoolVar(&opts.ReadOnly, "read-only", false, "expose only read-only tools")
@@ -71,12 +71,12 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
-	s, err := server.New(opts, docs.New(), core.New(client), datafactory.New(client))
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	s, err := server.New(ctx, opts, docs.New(), core.New(client), datafactory.New(client))
 	if err != nil {
 		return err
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
 	switch *transport {
 	case "stdio":
 		return s.Run(ctx, &mcp.StdioTransport{})

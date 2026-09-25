@@ -34,6 +34,22 @@ func New(client *fabric.Client) *Area {
 // Name implements server.Area.
 func (*Area) Name() string { return "core" }
 
+// Description implements server.Describer, porting FabricCoreSetup's
+// CommandGroup description verbatim for namespace mode's "core" proxy tool.
+func (*Area) Description() string {
+	return "Microsoft Fabric Core Operations - Search, create, and manage Fabric items.\n" +
+		"Use this tool when you need to:\n" +
+		"- Search the OneLake catalog to discover Fabric items across workspaces\n" +
+		"- Create new Fabric items (Lakehouse, Notebook, etc.)\n" +
+		"- Manage core Fabric workspace items\n" +
+		"This tool provides core operations for working with Fabric resources."
+}
+
+// Title implements server.Describer. FabricCoreSetup's CommandGroup gets no
+// title, so upstream falls back to the namespace name ("core"); returning ""
+// here does the same via server.describe.
+func (*Area) Title() string { return "" }
+
 func boolPtr(b bool) *bool { return &b }
 
 // Register implements server.Area.
