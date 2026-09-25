@@ -1,0 +1,21 @@
+[
+  {"tool": "onelake_list-data-access-roles", "args": {"workspace": "polytable-e2e", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d"}},
+  {"tool": "onelake_list-data-access-roles", "args": {"item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d"}},
+  {"tool": "onelake_get-data-access-role", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d", "role-name": "DefaultReader"}},
+  {"tool": "onelake_get-data-access-role", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d", "role-name": "NoSuchRole"}, "pathsOnly": true},
+  {"tool": "onelake_get-data-access-role", "args": {"item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d", "role-name": "DefaultReader"}},
+  {"tool": "onelake_get-settings", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b"}},
+  {"tool": "onelake_get-settings", "args": {}},
+  {"tool": "onelake_get-settings", "args": {"workspace": "polytable-e2e"}},
+  {"tool": "onelake_modify-diagnostics", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "status": "Bogus"}},
+  {"tool": "onelake_modify-diagnostics", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "status": "Enabled"}},
+  {"tool": "onelake_modify-diagnostics", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "status": "Disabled", "destination-lakehouse-item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d"}},
+  {"tool": "onelake_modify-diagnostics", "args": {"status": "Enabled"}},
+  {"tool": "onelake_modify-immutability-policy", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "scope": "Bogus", "retention-days": 5}},
+  {"tool": "onelake_modify-immutability-policy", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "scope": "DiagnosticLogs", "retention-days": 0}},
+  {"tool": "onelake_modify-immutability-policy", "args": {"scope": "DiagnosticLogs", "retention-days": 5}},
+  {"tool": "onelake_create-or-update-data-access-role", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d"}},
+  {"tool": "onelake_create-or-update-data-access-role", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d", "role-name": "X", "entra-members": "not-a-guid-no-at"}},
+  {"tool": "onelake_create-or-update-data-access-role", "args": {"workspace": "polytable-e2e", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d", "role-name": "X", "entra-members": "11111111-1111-1111-1111-111111111111"}},
+  {"tool": "onelake_create-or-update-data-access-role", "args": {"item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d", "role-name": "X", "permitted-actions": "Write"}}
+]
