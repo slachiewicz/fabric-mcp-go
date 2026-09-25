@@ -20,6 +20,7 @@ import (
 	"github.com/slachiewicz/fabric-mcp-go/internal/auth"
 	"github.com/slachiewicz/fabric-mcp-go/internal/server"
 	"github.com/slachiewicz/fabric-mcp-go/internal/tools/core"
+	"github.com/slachiewicz/fabric-mcp-go/internal/tools/datafactory"
 	"github.com/slachiewicz/fabric-mcp-go/internal/tools/docs"
 )
 
@@ -70,7 +71,7 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
-	s, err := server.New(opts, docs.New(), core.New(client))
+	s, err := server.New(opts, docs.New(), core.New(client), datafactory.New(client))
 	if err != nil {
 		return err
 	}

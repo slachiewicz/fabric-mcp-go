@@ -98,5 +98,39 @@
       "item-type": "Lakehouse"
     },
     "pathsOnly": true
+  },
+  {
+    "tool": "datafactory_list-pipelines",
+    "args": {
+      "workspace-id": "cfb2b67a-30e3-4d30-b237-63d59201da4d"
+    }
+  },
+  {
+    "tool": "datafactory_list-dataflows",
+    "args": {
+      "workspace-id": "cfb2b67a-30e3-4d30-b237-63d59201da4d"
+    }
+  },
+  {
+    "tool": "datafactory_get-pipeline",
+    "args": {
+      "workspace-id": "cfb2b67a-30e3-4d30-b237-63d59201da4d",
+      "pipeline-id": "00000000-0000-0000-0000-000000000000"
+    },
+    "pathsOnly": true
+  },
+  {
+    "tool": "datafactory_list-pipelines",
+    "args": {
+      "workspace-id": "00000000-0000-0000-0000-000000000000"
+    },
+    "pathsOnly": true
+  },
+  {
+    "tool": "datafactory_list-dataflows",
+    "args": {
+      "workspace-id": "00000000-0000-0000-0000-000000000000"
+    },
+    "pathsOnly": true
   }
 ]

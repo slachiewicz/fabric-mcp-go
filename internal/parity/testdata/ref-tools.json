@@ -84,6 +84,238 @@
   },
   {
     "_meta": {
+      "MicrosoftMcpToolId": "98c74b3b-1813-40db-9abe-30ad90beb236"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create Dataflow"
+    },
+    "description": "Creates a new dataflow in a specified Microsoft Fabric workspace.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "description": "Optional description for the item.",
+          "type": "string"
+        },
+        "display-name": {
+          "description": "The display name for the item.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "display-name"
+      ],
+      "type": "object"
+    },
+    "name": "datafactory_create-dataflow"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "faf493a8-0c7d-4347-854a-a85120dd8199"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create Pipeline"
+    },
+    "description": "Creates a new pipeline in a Microsoft Fabric workspace. Requires workspace ID and display name. Optionally provide a description.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "description": "Optional description for the item.",
+          "type": "string"
+        },
+        "display-name": {
+          "description": "The display name for the item.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "display-name"
+      ],
+      "type": "object"
+    },
+    "name": "datafactory_create-pipeline"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "b4e2a1f9-6c3d-4a8e-9f12-d5c7b8e3a041"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Execute Dataflow Query"
+    },
+    "description": "Executes an M (Power Query) expression against a dataflow in a Microsoft Fabric workspace.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "dataflow-id": {
+          "description": "The ID of the dataflow.",
+          "type": "string"
+        },
+        "query": {
+          "description": "The M (Power Query) expression to execute.",
+          "type": "string"
+        },
+        "query-name": {
+          "description": "The name of the query to execute.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "dataflow-id",
+        "query-name",
+        "query"
+      ],
+      "type": "object"
+    },
+    "name": "datafactory_execute-query"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "0d8e07d4-63c2-4a96-b364-01d5db6e660b"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get Pipeline"
+    },
+    "description": "Gets details of a specific pipeline in a Microsoft Fabric workspace. Requires workspace ID and pipeline ID.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "pipeline-id": {
+          "description": "The ID of the pipeline.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "pipeline-id"
+      ],
+      "type": "object"
+    },
+    "name": "datafactory_get-pipeline"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "07025647-7bd3-4e80-82eb-13bbd603d076"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List Dataflows"
+    },
+    "description": "Lists all dataflows in a specified Microsoft Fabric workspace.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id"
+      ],
+      "type": "object"
+    },
+    "name": "datafactory_list-dataflows"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "365d2efc-ce25-4a32-afb1-294daf6e462b"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List Pipelines"
+    },
+    "description": "Lists all pipelines in a specified Microsoft Fabric workspace. Requires the workspace ID.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id"
+      ],
+      "type": "object"
+    },
+    "name": "datafactory_list-pipelines"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "be699abf-2297-4328-be8c-e93f045236f2"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Run Pipeline"
+    },
+    "description": "Triggers a run of a specified pipeline in a Microsoft Fabric workspace. Requires workspace ID and pipeline ID. Returns the run instance ID.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "pipeline-id": {
+          "description": "The ID of the pipeline.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "pipeline-id"
+      ],
+      "type": "object"
+    },
+    "name": "datafactory_run-pipeline"
+  },
+  {
+    "_meta": {
       "MicrosoftMcpToolId": "3efdeea3-ee84-43e7-b7a9-c4accb03795a"
     },
     "annotations": {

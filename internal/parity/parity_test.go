@@ -46,7 +46,7 @@ import (
 
 // namespaces lists the tool namespaces this harness compares. Extend as
 // more areas land in internal/tools.
-var namespaces = []string{"docs", "core"}
+var namespaces = []string{"docs", "core", "datafactory"}
 
 const (
 	ourCmdImportPath = "github.com/slachiewicz/fabric-mcp-go/cmd/fabmcp"
