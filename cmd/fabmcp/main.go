@@ -24,6 +24,7 @@ import (
 	"github.com/slachiewicz/fabric-mcp-go/internal/tools/core"
 	"github.com/slachiewicz/fabric-mcp-go/internal/tools/datafactory"
 	"github.com/slachiewicz/fabric-mcp-go/internal/tools/docs"
+	"github.com/slachiewicz/fabric-mcp-go/internal/tools/onelake"
 )
 
 func main() {
@@ -94,7 +95,7 @@ func run(args []string) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	s, err := server.New(ctx, opts, docs.New(), core.New(client), datafactory.New(client))
+	s, err := server.New(ctx, opts, docs.New(), core.New(client), datafactory.New(client), onelake.New(cred))
 	if err != nil {
 		return err
 	}

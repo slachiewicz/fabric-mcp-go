@@ -35,6 +35,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -46,12 +47,12 @@ import (
 
 // namespaces lists the tool namespaces this harness compares. Extend as
 // more areas land in internal/tools.
-var namespaces = []string{"docs", "core", "datafactory"}
+var namespaces = []string{"docs", "core", "datafactory", "onelake"}
 
 const (
 	ourCmdImportPath = "github.com/slachiewicz/fabric-mcp-go/cmd/fabmcp"
 	refToolsGolden   = "testdata/ref-tools.json"
-	callsDataPath    = "testdata/calls.json"
+	callsDataGlob    = "testdata/calls*.json"
 
 	// connectTimeout bounds only the initialize handshake, not the
 	// process's overall lifetime (see startSession).
@@ -64,6 +65,10 @@ const (
 )
 
 var update = flag.Bool("update", false, "write the live reference tools/list to testdata/ref-tools.json instead of comparing")
+
+// only restricts both comparisons to tools whose name matches, so work on
+// one tool group can be checked while other groups are unfinished.
+var only = flag.String("parity.only", "", "compare only tools whose name matches this regular expression")
 
 // TestParityToolsList compares the tools/list output of the namespaces in
 // scope (see namespaces) between the reference server and ours: the tool
@@ -299,18 +304,39 @@ type toolCall struct {
 func loadCalls(t *testing.T) []toolCall {
 	t.Helper()
 
-	data, err := os.ReadFile(callsDataPath)
+	files, err := filepath.Glob(callsDataGlob)
 	if err != nil {
-		t.Fatalf("read %s: %v", callsDataPath, err)
+		t.Fatal(err)
 	}
 	var calls []toolCall
-	if err := json.Unmarshal(data, &calls); err != nil {
-		t.Fatalf("parse %s: %v", callsDataPath, err)
+	for _, f := range files {
+		data, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatalf("read %s: %v", f, err)
+		}
+		var cs []toolCall
+		if err := json.Unmarshal(data, &cs); err != nil {
+			t.Fatalf("parse %s: %v", f, err)
+		}
+		for _, c := range cs {
+			if onlyRE(t).MatchString(c.Tool) {
+				calls = append(calls, c)
+			}
+		}
 	}
 	if len(calls) == 0 {
-		t.Fatalf("%s contains no calls", callsDataPath)
+		t.Skipf("no calls in %s match -parity.only", callsDataGlob)
 	}
 	return calls
+}
+
+func onlyRE(t *testing.T) *regexp.Regexp {
+	t.Helper()
+	re, err := regexp.Compile(*only)
+	if err != nil {
+		t.Fatalf("-parity.only: %v", err)
+	}
+	return re
 }
 
 func compareCall(t *testing.T, ctx context.Context, refSess, ourSess *mcp.ClientSession, call toolCall) {
@@ -524,7 +550,11 @@ func buildOurBinary(t *testing.T) string {
 
 func filterNamespaces(tools []*mcp.Tool, ns []string) []*mcp.Tool {
 	var out []*mcp.Tool
+	re := regexp.MustCompile(*only)
 	for _, tool := range tools {
+		if !re.MatchString(tool.Name) {
+			continue
+		}
 		for _, n := range ns {
 			if strings.HasPrefix(tool.Name, n+"_") {
 				out = append(out, tool)

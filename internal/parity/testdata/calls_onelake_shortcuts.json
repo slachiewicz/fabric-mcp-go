@@ -1,0 +1,130 @@
+[
+  {
+    "tool": "onelake_list-shortcuts",
+    "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d"}
+  },
+  {
+    "tool": "onelake_list-shortcuts",
+    "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item-id": "00000000-0000-0000-0000-000000000000"},
+    "pathsOnly": true
+  },
+  {
+    "tool": "onelake_get-shortcut",
+    "args": {
+      "workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b",
+      "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d",
+      "shortcut-path": "Files",
+      "shortcut-name": "t92-shortcut-to-tables"
+    }
+  },
+  {
+    "tool": "onelake_get-shortcut",
+    "args": {
+      "workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b",
+      "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d",
+      "shortcut-path": "nope",
+      "shortcut-name": "nope"
+    },
+    "pathsOnly": true
+  },
+  {
+    "tool": "onelake_create-shortcut-onelake",
+    "args": {
+      "workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b",
+      "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d",
+      "shortcut-path": "Files",
+      "shortcut-name": "fabmcp-parity-onelake",
+      "target-workspace-id": "00000000-0000-0000-0000-000000000000",
+      "target-item-id": "00000000-0000-0000-0000-000000000000",
+      "target-path": "Files"
+    },
+    "pathsOnly": true
+  },
+  {
+    "tool": "onelake_create-shortcut-adls-gen2",
+    "args": {
+      "workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b",
+      "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d",
+      "shortcut-path": "Files",
+      "shortcut-name": "fabmcp-parity-adls-gen2",
+      "target-location": "https://noaccount.dfs.core.windows.net/nocontainer",
+      "target-subpath": "nosub",
+      "target-connection-id": "00000000-0000-0000-0000-000000000000"
+    },
+    "pathsOnly": true
+  },
+  {
+    "tool": "onelake_create-shortcut-amazon-s3",
+    "args": {
+      "workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b",
+      "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d",
+      "shortcut-path": "Files",
+      "shortcut-name": "fabmcp-parity-amazon-s3",
+      "target-location": "https://s3.amazonaws.com/nobucket",
+      "target-connection-id": "00000000-0000-0000-0000-000000000000"
+    },
+    "pathsOnly": true
+  },
+  {
+    "tool": "onelake_create-shortcut-azure-blob",
+    "args": {
+      "workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b",
+      "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d",
+      "shortcut-path": "Files",
+      "shortcut-name": "fabmcp-parity-azure-blob",
+      "target-location": "https://noaccount.blob.core.windows.net/nocontainer",
+      "target-connection-id": "00000000-0000-0000-0000-000000000000"
+    },
+    "pathsOnly": true
+  },
+  {
+    "tool": "onelake_create-shortcut-gcs",
+    "args": {
+      "workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b",
+      "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d",
+      "shortcut-path": "Files",
+      "shortcut-name": "fabmcp-parity-gcs",
+      "target-location": "https://storage.googleapis.com/nobucket",
+      "target-connection-id": "00000000-0000-0000-0000-000000000000"
+    },
+    "pathsOnly": true
+  },
+  {
+    "tool": "onelake_create-shortcut-s3-compatible",
+    "args": {
+      "workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b",
+      "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d",
+      "shortcut-path": "Files",
+      "shortcut-name": "fabmcp-parity-s3-compatible",
+      "target-location": "https://nohost.example.com",
+      "target-connection-id": "00000000-0000-0000-0000-000000000000",
+      "target-bucket": "nobucket"
+    },
+    "pathsOnly": true
+  },
+  {
+    "tool": "onelake_create-shortcut-dataverse",
+    "args": {
+      "workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b",
+      "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d",
+      "shortcut-path": "Files",
+      "shortcut-name": "fabmcp-parity-dataverse",
+      "target-environment-domain": "https://noorg.crm.dynamics.com",
+      "target-connection-id": "00000000-0000-0000-0000-000000000000",
+      "target-deltalake-folder": "nofolder"
+    },
+    "pathsOnly": true
+  },
+  {
+    "tool": "onelake_create-shortcut-onedrive-sharepoint",
+    "args": {
+      "workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b",
+      "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d",
+      "shortcut-path": "Files",
+      "shortcut-name": "fabmcp-parity-onedrive-sharepoint",
+      "target-location": "https://noorg-my.sharepoint.com/personal/x",
+      "target-connection-id": "00000000-0000-0000-0000-000000000000"
+    },
+    "pathsOnly": true
+  }
+]

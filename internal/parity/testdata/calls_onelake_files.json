@@ -1,0 +1,17 @@
+[
+  {"tool": "onelake_list-files", "args": {}},
+  {"tool": "onelake_list-files", "args": {"workspace": "polytable-e2e"}},
+  {"tool": "onelake_list-files", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse"}, "pathsOnly": true},
+  {"tool": "onelake_list-files", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "path": "Tables/orders/_delta_log"}, "pathsOnly": true},
+  {"tool": "onelake_list-files", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "path": "Tables/orders/_delta_log", "format": "raw"}, "pathsOnly": true},
+
+  {"tool": "onelake_download-file", "args": {"file-path": "x"}},
+  {"tool": "onelake_download-file", "args": {"workspace": "polytable-e2e", "file-path": "x"}},
+  {"tool": "onelake_download-file", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "file-path": "Tables/orders/_delta_log/_last_checkpoint"}, "pathsOnly": true},
+  {"tool": "onelake_download-file", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "file-path": "Tables/orders/_delta_log/does-not-exist.json"}},
+
+  {"tool": "onelake_create-directory", "args": {"directory-path": "Files/x"}},
+  {"tool": "onelake_create-directory", "args": {"workspace": "polytable-e2e", "directory-path": "Files/x"}},
+  {"tool": "onelake_create-directory", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "directory-path": "../etc"}},
+  {"tool": "onelake_create-directory", "args": {"workspace": "polytable-e2e", "item": "does-not-exist-item.Lakehouse", "directory-path": "Files/x"}}
+]

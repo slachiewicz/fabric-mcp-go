@@ -1,0 +1,11 @@
+[
+  {"tool": "onelake_list-workspaces", "args": {}},
+  {"tool": "onelake_list-workspaces", "args": {"format": "xml"}},
+  {"tool": "onelake_list-items", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b"}},
+  {"tool": "onelake_list-items", "args": {"workspace": "polytable-e2e"}},
+  {"tool": "onelake_list-items", "args": {}},
+  {"tool": "onelake_list-items", "args": {"workspace-id": "00000000-0000-0000-0000-000000000000"}, "pathsOnly": true},
+  {"tool": "onelake_list-items-dfs", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b"}},
+  {"tool": "onelake_list-items-dfs", "args": {"workspace": "polytable-e2e", "recursive": true}},
+  {"tool": "onelake_list-items-dfs", "args": {"workspace": "no-such-workspace-xyz"}}
+]

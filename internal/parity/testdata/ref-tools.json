@@ -459,5 +459,1543 @@
       "type": "object"
     },
     "name": "docs_platform-api-spec"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "0c4cf0f4-2ef4-4f1d-9f80-24fd7636d5fe"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create OneLake Directory"
+    },
+    "description": "Creates a directory in OneLake storage. Use this when the user needs to organize files or prepare folder structures. Can create nested directory paths.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "directory-path": {
+          "description": "The path to the directory in OneLake.",
+          "type": "string"
+        },
+        "item": {
+          "description": "The name or ID of the Fabric item. When using friendly names, MUST include the item type suffix (e.g., 'ItemName.Lakehouse', 'ItemName.Warehouse').",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "directory-path"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_create-directory"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-1001-4000-8000-000000000003"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create or Update OneLake Data Access Role"
+    },
+    "description": "Upsert a single data access role on a single item. Use flat options (--name,\n--entra-members, --permitted-paths, --permitted-actions) for the common case\nof granting Read access. For advanced scenarios (multiple decision rules,\ncolumn/row constraints), pass the full JSON via --role-definition instead.\nWhen flat options are provided, --role-definition is ignored.\nMembers can be specified by Entra object ID (GUID), email address, or UPN —\nnon-GUID values are automatically resolved via Microsoft Graph.\nCaller must be a workspace Admin or Member. Requires OneLake.ReadWrite.All and\nUser.Read.All + GroupMember.Read.All for principal resolution.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "entra-members": {
+          "description": "Comma-separated Entra member identifiers (object IDs, emails, or UPNs). Non-GUID values are resolved via Microsoft Graph.",
+          "type": "string"
+        },
+        "fabric-item-members": {
+          "description": "Comma-separated Fabric item member references in format 'itemId:permission' (e.g. 'dfbe1234-...:Read').",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "permitted-actions": {
+          "description": "Comma-separated actions to permit. Currently only 'Read' is supported. Defaults to 'Read' if omitted.",
+          "type": "string"
+        },
+        "permitted-paths": {
+          "description": "Comma-separated paths to grant access to (e.g. 'Files/images/*,Tables/sales'). Omit to grant access to the entire item.",
+          "type": "string"
+        },
+        "role-definition": {
+          "description": "JSON definition of the data access role. Must include 'name', 'members'\n(with microsoftEntraMembers), and 'decisionRules'.\nmembers.microsoftEntraMembers[].objectId accepts EITHER an Entra object ID\n(GUID) OR an email address / UPN — non-GUID values are automatically\nresolved to object IDs via Microsoft Graph (tries /users first, then\n/groups by mail, so mail-enabled groups and DLs work too). Do NOT call\nGraph yourself to convert emails to GUIDs first; pass the email or UPN\ndirectly. tenantId may be omitted — it is filled in during resolution.\nTo scope access to a specific folder, include a Path attribute in\ndecisionRules. Omitting Path grants access to the entire item.\nExample with emails (preferred when you know the address, not the GUID):\n{\"name\":\"ImagesReadOnly\",\n \"members\":{\"microsoftEntraMembers\":[\n   {\"objectId\":\"alice@contoso.com\"},\n   {\"objectId\":\"data-readers@contoso.com\"}]},\n \"decisionRules\":[{\"effect\":\"Permit\",\"permission\":[\n   {\"attributeName\":\"Action\",\"attributeValueIncludedIn\":[\"Read\"]},\n   {\"attributeName\":\"Path\",\"attributeValueIncludedIn\":[\"Files/images/*\"]}]}]}\nExample with GUIDs (use when you already have the object ID):\n{\"name\":\"ImagesReadOnly\",\n \"members\":{\"microsoftEntraMembers\":[\n   {\"objectId\":\"514402e2-4238-4672-b021-ff9000307b66\"}]},\n \"decisionRules\":[{\"effect\":\"Permit\",\"permission\":[\n   {\"attributeName\":\"Action\",\"attributeValueIncludedIn\":[\"Read\"]}]}]}",
+          "type": "string"
+        },
+        "role-name": {
+          "description": "The name of the data access role.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item-id"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_create-or-update-data-access-role"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-2001-4000-8000-000000000011"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create OneLake Shortcut (ADLS Gen2 Target)"
+    },
+    "description": "Create a shortcut pointing to an Azure Data Lake Storage Gen2 location.\nRequires a connection ID for authentication and a target URL. Requires\nOneLake.ReadWrite.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "shortcut-conflict-policy": {
+          "description": "Action when a shortcut with the same name and path already exists. Default: Abort.",
+          "type": "string"
+        },
+        "shortcut-name": {
+          "description": "The name of the shortcut.",
+          "type": "string"
+        },
+        "shortcut-path": {
+          "description": "The path of the shortcut within the item.",
+          "type": "string"
+        },
+        "target-connection-id": {
+          "description": "The connection ID (GUID) for authenticating to the target.",
+          "type": "string"
+        },
+        "target-location": {
+          "description": "The target storage URL (e.g. 'https://myaccount.dfs.core.windows.net/container').",
+          "type": "string"
+        },
+        "target-subpath": {
+          "description": "The subpath within the target storage location.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id",
+        "shortcut-path",
+        "shortcut-name",
+        "target-location",
+        "target-subpath",
+        "target-connection-id"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_create-shortcut-adls-gen2"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-2001-4000-8000-000000000012"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create OneLake Shortcut (Amazon S3 Target)"
+    },
+    "description": "Create a shortcut pointing to an Amazon S3 location. Requires a connection\nID for authentication and a target URL. Requires OneLake.ReadWrite.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "shortcut-conflict-policy": {
+          "description": "Action when a shortcut with the same name and path already exists. Default: Abort.",
+          "type": "string"
+        },
+        "shortcut-name": {
+          "description": "The name of the shortcut.",
+          "type": "string"
+        },
+        "shortcut-path": {
+          "description": "The path of the shortcut within the item.",
+          "type": "string"
+        },
+        "target-connection-id": {
+          "description": "The connection ID (GUID) for authenticating to the target.",
+          "type": "string"
+        },
+        "target-location": {
+          "description": "The target storage URL (e.g. 'https://myaccount.dfs.core.windows.net/container').",
+          "type": "string"
+        },
+        "target-subpath": {
+          "description": "The subpath within the target storage location.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id",
+        "shortcut-path",
+        "shortcut-name",
+        "target-location",
+        "target-connection-id"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_create-shortcut-amazon-s3"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-2001-4000-8000-000000000013"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create OneLake Shortcut (Azure Blob Storage Target)"
+    },
+    "description": "Create a shortcut pointing to an Azure Blob Storage location. Requires a\nconnection ID for authentication and a target URL. Requires\nOneLake.ReadWrite.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "shortcut-conflict-policy": {
+          "description": "Action when a shortcut with the same name and path already exists. Default: Abort.",
+          "type": "string"
+        },
+        "shortcut-name": {
+          "description": "The name of the shortcut.",
+          "type": "string"
+        },
+        "shortcut-path": {
+          "description": "The path of the shortcut within the item.",
+          "type": "string"
+        },
+        "target-connection-id": {
+          "description": "The connection ID (GUID) for authenticating to the target.",
+          "type": "string"
+        },
+        "target-location": {
+          "description": "The target storage URL (e.g. 'https://myaccount.dfs.core.windows.net/container').",
+          "type": "string"
+        },
+        "target-subpath": {
+          "description": "The subpath within the target storage location.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id",
+        "shortcut-path",
+        "shortcut-name",
+        "target-location",
+        "target-connection-id"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_create-shortcut-azure-blob"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-2001-4000-8000-000000000016"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create OneLake Shortcut (Dataverse Target)"
+    },
+    "description": "Create a shortcut pointing to a Dataverse environment. Requires the\nenvironment domain, connection ID, and Delta Lake folder. Requires\nOneLake.ReadWrite.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "shortcut-conflict-policy": {
+          "description": "Action when a shortcut with the same name and path already exists. Default: Abort.",
+          "type": "string"
+        },
+        "shortcut-name": {
+          "description": "The name of the shortcut.",
+          "type": "string"
+        },
+        "shortcut-path": {
+          "description": "The path of the shortcut within the item.",
+          "type": "string"
+        },
+        "target-connection-id": {
+          "description": "The connection ID (GUID) for authenticating to the target.",
+          "type": "string"
+        },
+        "target-deltalake-folder": {
+          "description": "The Delta Lake folder path in Dataverse.",
+          "type": "string"
+        },
+        "target-environment-domain": {
+          "description": "The Dataverse environment domain URI (e.g. 'https://orgname.crm.dynamics.com').",
+          "type": "string"
+        },
+        "target-table-name": {
+          "description": "The Dataverse table name.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id",
+        "shortcut-path",
+        "shortcut-name",
+        "target-environment-domain",
+        "target-connection-id",
+        "target-deltalake-folder"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_create-shortcut-dataverse"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-2001-4000-8000-000000000014"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create OneLake Shortcut (Google Cloud Storage Target)"
+    },
+    "description": "Create a shortcut pointing to a Google Cloud Storage location. Requires a\nconnection ID for authentication and a target URL. Requires\nOneLake.ReadWrite.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "shortcut-conflict-policy": {
+          "description": "Action when a shortcut with the same name and path already exists. Default: Abort.",
+          "type": "string"
+        },
+        "shortcut-name": {
+          "description": "The name of the shortcut.",
+          "type": "string"
+        },
+        "shortcut-path": {
+          "description": "The path of the shortcut within the item.",
+          "type": "string"
+        },
+        "target-connection-id": {
+          "description": "The connection ID (GUID) for authenticating to the target.",
+          "type": "string"
+        },
+        "target-location": {
+          "description": "The target storage URL (e.g. 'https://myaccount.dfs.core.windows.net/container').",
+          "type": "string"
+        },
+        "target-subpath": {
+          "description": "The subpath within the target storage location.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id",
+        "shortcut-path",
+        "shortcut-name",
+        "target-location",
+        "target-connection-id"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_create-shortcut-gcs"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-2001-4000-8000-000000000017"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create OneLake Shortcut (OneDrive/SharePoint Target)"
+    },
+    "description": "Create a shortcut pointing to a OneDrive or SharePoint Online location.\nRequires a connection ID and target URL. Optionally updates the Fabric\nitem sensitivity label from the source. Requires OneLake.ReadWrite.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "shortcut-conflict-policy": {
+          "description": "Action when a shortcut with the same name and path already exists. Default: Abort.",
+          "type": "string"
+        },
+        "shortcut-name": {
+          "description": "The name of the shortcut.",
+          "type": "string"
+        },
+        "shortcut-path": {
+          "description": "The path of the shortcut within the item.",
+          "type": "string"
+        },
+        "target-connection-id": {
+          "description": "The connection ID (GUID) for authenticating to the target.",
+          "type": "string"
+        },
+        "target-location": {
+          "description": "The target storage URL (e.g. 'https://myaccount.dfs.core.windows.net/container').",
+          "type": "string"
+        },
+        "target-subpath": {
+          "description": "The subpath within the target storage location.",
+          "type": "string"
+        },
+        "target-update-fabric-item-sensitivity": {
+          "description": "Whether to update Fabric item sensitivity from OneDrive/SharePoint. Default: false.",
+          "type": "boolean"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id",
+        "shortcut-path",
+        "shortcut-name",
+        "target-location",
+        "target-connection-id"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_create-shortcut-onedrive-sharepoint"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-2001-4000-8000-000000000010"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create OneLake Shortcut (OneLake Target)"
+    },
+    "description": "Create a shortcut pointing to another OneLake location. Specify the target\nworkspace, item, and optional path within the target item. Requires\nOneLake.ReadWrite.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "shortcut-conflict-policy": {
+          "description": "Action when a shortcut with the same name and path already exists. Default: Abort.",
+          "type": "string"
+        },
+        "shortcut-name": {
+          "description": "The name of the shortcut.",
+          "type": "string"
+        },
+        "shortcut-path": {
+          "description": "The path of the shortcut within the item.",
+          "type": "string"
+        },
+        "target-connection-id": {
+          "description": "The connection ID (GUID) for authenticating to the target.",
+          "type": "string"
+        },
+        "target-item-id": {
+          "description": "The item ID (GUID) of the target OneLake item.",
+          "type": "string"
+        },
+        "target-path": {
+          "description": "The path within the target item (e.g. 'Files/data').",
+          "type": "string"
+        },
+        "target-workspace-id": {
+          "description": "The workspace ID (GUID) of the target OneLake item.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id",
+        "shortcut-path",
+        "shortcut-name",
+        "target-workspace-id",
+        "target-item-id",
+        "target-path"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_create-shortcut-onelake"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-2001-4000-8000-000000000015"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create OneLake Shortcut (S3 Compatible Target)"
+    },
+    "description": "Create a shortcut pointing to an S3-compatible storage location. Requires\na connection ID, target URL, and bucket name. Requires OneLake.ReadWrite.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "shortcut-conflict-policy": {
+          "description": "Action when a shortcut with the same name and path already exists. Default: Abort.",
+          "type": "string"
+        },
+        "shortcut-name": {
+          "description": "The name of the shortcut.",
+          "type": "string"
+        },
+        "shortcut-path": {
+          "description": "The path of the shortcut within the item.",
+          "type": "string"
+        },
+        "target-bucket": {
+          "description": "The bucket name for S3-compatible targets.",
+          "type": "string"
+        },
+        "target-connection-id": {
+          "description": "The connection ID (GUID) for authenticating to the target.",
+          "type": "string"
+        },
+        "target-location": {
+          "description": "The target storage URL (e.g. 'https://myaccount.dfs.core.windows.net/container').",
+          "type": "string"
+        },
+        "target-subpath": {
+          "description": "The subpath within the target storage location.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id",
+        "shortcut-path",
+        "shortcut-name",
+        "target-location",
+        "target-connection-id",
+        "target-bucket"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_create-shortcut-s3-compatible"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-1001-4000-8000-000000000004"
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Delete OneLake Data Access Role"
+    },
+    "description": "Delete a single data access role from a single item. Scoped to one role\non one item per call. Destructive — principals that gained access only\nvia this role lose it on this item. Does not affect roles on other items.\nCaller must be a workspace Admin or Member on the item's workspace.\nRequires OneLake.ReadWrite.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "role-name": {
+          "description": "The name of the data access role.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item-id",
+        "role-name"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_delete-data-access-role"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "86991cd6-75fa-4870-9d99-f986ba9f5f73"
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Delete OneLake Directory"
+    },
+    "description": "Deletes a directory from OneLake storage. Use this when the user wants to remove a folder. Use recursive flag to delete non-empty directories.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "directory-path": {
+          "description": "The path to the directory in OneLake.",
+          "type": "string"
+        },
+        "item": {
+          "description": "The name or ID of the Fabric item. When using friendly names, MUST include the item type suffix (e.g., 'ItemName.Lakehouse', 'ItemName.Warehouse').",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "recursive": {
+          "description": "Whether to perform the operation recursively.",
+          "type": "boolean"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "directory-path"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_delete-directory"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "0aa3f887-0085-4141-8e34-f0cf1ed44f71"
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Delete OneLake File"
+    },
+    "description": "Deletes a file from OneLake storage. Use this when the user wants to remove a specific file. Permanently removes the file at the specified path.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "file-path": {
+          "description": "The path to the file in OneLake.",
+          "type": "string"
+        },
+        "item": {
+          "description": "The name or ID of the Fabric item. When using friendly names, MUST include the item type suffix (e.g., 'ItemName.Lakehouse', 'ItemName.Warehouse').",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file-path"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_delete-file"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-2001-4000-8000-000000000004"
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Delete OneLake Shortcut"
+    },
+    "description": "Delete a single shortcut from an item. Destructive but the destination\ndata is preserved — only the shortcut reference is removed. Requires\nOneLake.ReadWrite.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "shortcut-name": {
+          "description": "The name of the shortcut.",
+          "type": "string"
+        },
+        "shortcut-path": {
+          "description": "The path of the shortcut within the item.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id",
+        "shortcut-path",
+        "shortcut-name"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_delete-shortcut"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "75d6cb4c-4e81-4e69-a4ec-eca53a7dacd9"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Download OneLake File"
+    },
+    "description": "Downloads a file from OneLake storage. Use this when the user needs to retrieve file content or metadata. Returns base64 content, metadata, and text when applicable.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "download-file-path": {
+          "description": "Local path to save the downloaded content when running locally.",
+          "type": "string"
+        },
+        "file-path": {
+          "description": "The path to the file in OneLake.",
+          "type": "string"
+        },
+        "item": {
+          "description": "The name or ID of the Fabric item. When using friendly names, MUST include the item type suffix (e.g., 'ItemName.Lakehouse', 'ItemName.Warehouse').",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file-path"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_download-file"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-1001-4000-8000-000000000002"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get OneLake Data Access Role"
+    },
+    "description": "Get the full definition of a single data access role on a single item —\nmembers, permissions, decision rules. Scoped to one role on one item per\ncall. Use after onelake_list-data-access-roles once you know which role\nyou need on which item. Distinct from onelake_get-principal-access,\nwhich returns the effective (resolved) access for a given principal\nacross all roles on an item. Caller must be a workspace Admin or Member\non the item's workspace. Requires OneLake.Read.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "role-name": {
+          "description": "The name of the data access role.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item-id",
+        "role-name"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_get-data-access-role"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-3001-4000-8000-000000000001"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get OneLake Settings"
+    },
+    "description": "Get the OneLake settings for a workspace — diagnostics configuration and\nimmutability policy. Requires OneLake.Read.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "onelake_get-settings"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-2001-4000-8000-000000000002"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get OneLake Shortcut"
+    },
+    "description": "Get the properties of a single shortcut (name, path, target,\nconfiguration). Requires OneLake.Read.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "shortcut-name": {
+          "description": "The name of the shortcut.",
+          "type": "string"
+        },
+        "shortcut-path": {
+          "description": "The path of the shortcut within the item.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id",
+        "shortcut-path",
+        "shortcut-name"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_get-shortcut"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "19bb5a6a-2a09-410c-bfa0-312986c6acc6"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get OneLake Table"
+    },
+    "description": "Retrieves table definition from OneLake. Use this when the user needs table schema or metadata.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item": {
+          "description": "The name or ID of the Fabric item. When using friendly names, MUST include the item type suffix (e.g., 'ItemName.Lakehouse', 'ItemName.Warehouse').",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "The table namespace (schema) to inspect within the OneLake table API.",
+          "type": "string"
+        },
+        "schema": {
+          "description": "Alias for --namespace when specifying table schemas in the OneLake table API.",
+          "type": "string"
+        },
+        "table": {
+          "description": "The table name exposed by the OneLake table API.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "table"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_get-table"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "bc15c475-0329-4cc3-aaa8-0e9f3fbde6f8"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get OneLake Table Configuration"
+    },
+    "description": "Retrieves table API configuration for OneLake. Use this when the user needs to understand table access settings.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item": {
+          "description": "The name or ID of the Fabric item. When using friendly names, MUST include the item type suffix (e.g., 'ItemName.Lakehouse', 'ItemName.Warehouse').",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "onelake_get-table-config"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a86298d1-7475-4ea8-8c1b-e4c54ac2b896"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get OneLake Table Namespace"
+    },
+    "description": "Retrieves metadata for a specific table namespace. Use this when the user needs details about a namespace.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item": {
+          "description": "The name or ID of the Fabric item. When using friendly names, MUST include the item type suffix (e.g., 'ItemName.Lakehouse', 'ItemName.Warehouse').",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "The table namespace (schema) to inspect within the OneLake table API.",
+          "type": "string"
+        },
+        "schema": {
+          "description": "Alias for --namespace when specifying table schemas in the OneLake table API.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "onelake_get-table-namespace"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-1001-4000-8000-000000000001"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List OneLake Data Access Roles"
+    },
+    "description": "List all data access roles defined on a single item (Lakehouse / Warehouse) —\nthe role-based policies that gate Tables/Files access for that item. Scoped\nto one item per call; to inspect roles across multiple items, call once per\nitem. For looking up a specific role by name, fetch the list and pick by\nname; there is no server-side search. Caller must be a workspace Admin\nor Member on the item's workspace. Requires OneLake.Read.All.\nNote: Built-in roles (e.g. DefaultReader) may include fabricItemMembers with\na 'sourcePath' field formatted as '\u003cworkspaceId\u003e/\u003citemId\u003e' — this is NOT a\nOneLake file path; it identifies the workspace/item granting inherited access.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "continuation-token": {
+          "description": "Token for retrieving the next page of results.",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item-id"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_list-data-access-roles"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "3bf1b82d-ff44-4984-9b97-0e6d9e4917a3"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List OneLake Path Structure"
+    },
+    "description": "List files and directories in OneLake storage using a filesystem-style hierarchical view, similar to Azure Data Lake Storage Gen2.\nShows directory structure with paths, sizes, timestamps, and metadata. Use this to explore OneLake content in a filesystem format\nrather than flat blob listing. Supports optional path filtering and recursive directory traversal.\n\nIf no path is specified, intelligently discovers content by searching both Files and Tables folders automatically,\nproviding comprehensive visibility across all top-level OneLake folders.\n\nUse --format=raw to get the unprocessed OneLake DFS API response for debugging and analysis.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "description": "Output format for OneLake API responses. Use 'json' for parsed objects, 'xml' for raw XML API response, or 'raw' for unprocessed API response. Supported values: 'json' (default), 'xml', 'raw'.",
+          "type": "string"
+        },
+        "item": {
+          "description": "The name or ID of the Fabric item. When using friendly names, MUST include the item type suffix (e.g., 'ItemName.Lakehouse', 'ItemName.Warehouse').",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "path": {
+          "description": "The path to list in OneLake storage (optional, defaults to root).",
+          "type": "string"
+        },
+        "recursive": {
+          "description": "Whether to perform the operation recursively.",
+          "type": "boolean"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "onelake_list-files"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "61eb86d8-3879-4d2d-969a-6c96f2e0ce0d"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List OneLake Items"
+    },
+    "description": "Lists OneLake items in a Fabric workspace using the high-level OneLake API. Use this when the user needs to see what items exist in a workspace. Returns item names, types, and metadata.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "continuation-token": {
+          "description": "Token for retrieving the next page of results.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "onelake_list-items"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "8925d0c4-becf-4b5a-8af1-3e998c1058ec"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List OneLake Items (Data API)"
+    },
+    "description": "List OneLake items in a workspace using the OneLake DFS (Data Lake File System) data API.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "continuation-token": {
+          "description": "Token for retrieving the next page of results.",
+          "type": "string"
+        },
+        "recursive": {
+          "description": "Whether to perform the operation recursively.",
+          "type": "boolean"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "onelake_list-items-dfs"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-2001-4000-8000-000000000001"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List OneLake Shortcuts"
+    },
+    "description": "List shortcuts defined within an item, recursing through subfolders.\nReturns each shortcut's path and target. Requires OneLake.Read.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "continuation-token": {
+          "description": "Token for retrieving the next page of results.",
+          "type": "string"
+        },
+        "include-managed": {
+          "description": "Include DW-managed shortcuts in the results. Default: false (managed shortcuts are hidden to avoid overwhelming output).",
+          "type": "boolean"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "parent-path": {
+          "description": "The parent path under which to list shortcuts.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_list-shortcuts"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "173cfc00-7c12-486d-a0e7-c0d4c1de23fd"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List OneLake Table Namespaces"
+    },
+    "description": "Lists table namespaces in OneLake. Use this when the user needs to discover available table namespaces.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item": {
+          "description": "The name or ID of the Fabric item. When using friendly names, MUST include the item type suffix (e.g., 'ItemName.Lakehouse', 'ItemName.Warehouse').",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "onelake_list-table-namespaces"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "7b1688e5-2a16-475d-8fd1-9bf3b0acf4f7"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List OneLake Tables"
+    },
+    "description": "Lists tables in OneLake. Use this when the user needs to see available tables.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item": {
+          "description": "The name or ID of the Fabric item. When using friendly names, MUST include the item type suffix (e.g., 'ItemName.Lakehouse', 'ItemName.Warehouse').",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "The table namespace (schema) to inspect within the OneLake table API.",
+          "type": "string"
+        },
+        "schema": {
+          "description": "Alias for --namespace when specifying table schemas in the OneLake table API.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "onelake_list-tables"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "5f005a27-9838-4c09-9785-55ce49963c97"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List OneLake Workspaces"
+    },
+    "description": "Lists all Fabric workspaces accessible via OneLake data plane API. Use this when the user needs to view available workspaces or select a workspace for data operations. Returns workspace names and IDs.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "continuation-token": {
+          "description": "Token for retrieving the next page of results.",
+          "type": "string"
+        },
+        "format": {
+          "description": "Output format for OneLake API responses. Use 'json' for parsed objects, 'xml' for raw XML API response, or 'raw' for unprocessed API response. Supported values: 'json' (default), 'xml', 'raw'.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "onelake_list-workspaces"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-3001-4000-8000-000000000002"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Modify OneLake Diagnostics"
+    },
+    "description": "Enable or disable workspace-level OneLake diagnostic logging. When enabling,\nspecify the destination lakehouse where logs will be stored. When disabling,\ndestination options must be omitted. This is an LRO — the server may return\n202 Accepted. Requires OneLake.ReadWrite.All. Caller must be a workspace Admin\non the source workspace and Contributor+ on the destination workspace.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "destination-lakehouse-item-id": {
+          "description": "The item ID (GUID) of the destination lakehouse for diagnostic logs. Required when --status is Enabled.",
+          "type": "string"
+        },
+        "destination-lakehouse-workspace-id": {
+          "description": "The workspace ID (GUID) of the destination lakehouse for diagnostic logs. Required when --status is Enabled.",
+          "type": "string"
+        },
+        "status": {
+          "description": "The status of diagnostics: Enabled or Disabled.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_modify-diagnostics"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-3001-4000-8000-000000000003"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Modify OneLake Immutability Policy"
+    },
+    "description": "Modify the workspace-level OneLake immutability policy. Once enabled,\nimmutability cannot be disabled — confirm with the user before applying.\nRetention days cannot be reduced below the current value. Requires\nOneLake.ReadWrite.All. Caller must be a workspace Admin.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "retention-days": {
+          "description": "Number of days to retain diagnostic logs (minimum 1). Cannot be reduced below the current value.",
+          "type": "integer"
+        },
+        "scope": {
+          "description": "The scope of the immutability policy. Currently only 'DiagnosticLogs' is supported.",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "retention-days"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_modify-immutability-policy"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a1b2c3d4-2001-4000-8000-000000000005"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Reset OneLake Shortcut Cache"
+    },
+    "description": "Drop cached shortcut reads for a workspace, forcing the next read to\nre-resolve from the destination. Use sparingly — primarily for debugging\nstale-cache issues. Requires OneLake.ReadWrite.All.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_reset-shortcut-cache"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "f6b3249d-6481-4e80-9d34-0d6867718dd7"
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Upload OneLake File"
+    },
+    "description": "Uploads a file to OneLake storage from inline content or local file path. Use this when the user needs to store data in OneLake. Supports overwrite control and content type specification.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "description": "The content to write to the file.",
+          "type": "string"
+        },
+        "content-type": {
+          "description": "MIME content type to set on the uploaded file (e.g., 'application/json'). Defaults to 'application/octet-stream'.",
+          "type": "string"
+        },
+        "file-path": {
+          "description": "The path to the file in OneLake.",
+          "type": "string"
+        },
+        "item": {
+          "description": "The name or ID of the Fabric item. When using friendly names, MUST include the item type suffix (e.g., 'ItemName.Lakehouse', 'ItemName.Warehouse').",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The ID of the Fabric item.",
+          "type": "string"
+        },
+        "local-file-path": {
+          "description": "The path to a local file to upload.",
+          "type": "string"
+        },
+        "overwrite": {
+          "description": "Whether to overwrite existing files.",
+          "type": "boolean"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file-path"
+      ],
+      "type": "object"
+    },
+    "name": "onelake_upload-file"
   }
 ]
