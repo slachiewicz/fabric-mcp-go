@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -89,8 +90,8 @@ type learnInfo struct {
 
 // compareNamespaceLearn calls tool with learn=true on both sessions and
 // compares the resulting command set, plus each command's description and
-// input schema (via compareInputSchema from parity_test.go). Order is not
-// compared - see this file's package doc comment.
+// input schema (via compareInputSchema from parity_test.go), and the
+// listing order, which follows registration order on both servers.
 func compareNamespaceLearn(t *testing.T, ctx context.Context, refSess, ourSess *mcp.ClientSession, tool string) {
 	t.Helper()
 
@@ -109,6 +110,17 @@ func compareNamespaceLearn(t *testing.T, ctx context.Context, refSess, ourSess *
 	}
 	if diff := setDiff(refCommands, ourCommands); diff != "" {
 		t.Errorf("tool %s: learn command set differs: %s", tool, diff)
+	} else {
+		refOrder, ourOrder := make([]string, 0, len(refInfos)), make([]string, 0, len(ourInfos))
+		for _, i := range refInfos {
+			refOrder = append(refOrder, i.Command)
+		}
+		for _, i := range ourInfos {
+			ourOrder = append(ourOrder, i.Command)
+		}
+		if !slices.Equal(refOrder, ourOrder) {
+			t.Errorf("tool %s: learn order = %v, want %v", tool, ourOrder, refOrder)
+		}
 	}
 
 	for command, refInfo := range refByCommand {

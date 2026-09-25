@@ -55,6 +55,16 @@ func boolPtr(b bool) *bool { return &b }
 // Register implements server.Area.
 func (a *Area) Register(r *server.Registrar) {
 	server.AddTool(r, &mcp.Tool{
+		Name: "create-item",
+		Description: "Creates a new item in a Fabric workspace. Use this when the user wants to create a Lakehouse, " +
+			"Notebook, or other Fabric item type. Requires workspace ID, item name, and item type.",
+		Annotations: &mcp.ToolAnnotations{
+			Title:           "Create Fabric Item",
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}, a.createItem)
+
+	server.AddTool(r, &mcp.Tool{
 		Name: "search-catalog",
 		Description: "Searches the Microsoft Fabric OneLake catalog for items matching the specified criteria. " +
 			"Supports cross-workspace search over catalog metadata and returns results filtered to entries the " +
@@ -66,16 +76,6 @@ func (a *Area) Register(r *server.Registrar) {
 			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
 		},
 	}, a.searchCatalog)
-
-	server.AddTool(r, &mcp.Tool{
-		Name: "create-item",
-		Description: "Creates a new item in a Fabric workspace. Use this when the user wants to create a Lakehouse, " +
-			"Notebook, or other Fabric item type. Requires workspace ID, item name, and item type.",
-		Annotations: &mcp.ToolAnnotations{
-			Title:           "Create Fabric Item",
-			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
-		},
-	}, a.createItem)
 }
 
 type searchInput struct {

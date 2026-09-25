@@ -3,10 +3,16 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"slices"
+	"strings"
 
+	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/slachiewicz/fabric-mcp-go/internal/response"
 )
 
 // Version is set at build time with -ldflags "-X .../internal/server.Version=...".
@@ -29,6 +35,14 @@ type Options struct {
 	Namespaces []string // expose only these areas, e.g. "docs"
 	Tools      []string // expose only these tools, e.g. "docs_list-item-types"
 	ReadOnly   bool     // expose only tools annotated read-only
+
+	// DisableElicitation runs destructive tools without asking the user
+	// (--dangerously-disable-elicitation).
+	DisableElicitation bool
+
+	// proxied marks the hidden server behind the namespace and single mode
+	// proxies, which ask for consent themselves.
+	proxied bool
 }
 
 // Area is one tool namespace, e.g. docs or onelake.
@@ -53,18 +67,88 @@ type Registrar struct {
 	server *mcp.Server
 	opts   Options
 	area   string
+	order  *[]string // tool names in registration order, shared by all areas
 }
 
 // Area returns the namespace the registrar is currently registering for.
 func (r *Registrar) Area() string { return r.area }
 
-// AddTool registers a typed tool named "<area>_<name>" unless the Options filter it out.
+// AddTool registers a typed tool named "<area>_<name>" unless the Options
+// filter it out.
+//
+// Arguments are checked the way upstream's option binder does, before the
+// handler runs: missing required options and blank required strings are
+// reported as a 400 envelope rather than go-sdk's schema validation error,
+// so the handler is registered raw and In is decoded here.
 func AddTool[In, Out any](r *Registrar, t *mcp.Tool, h mcp.ToolHandlerFor[In, Out]) {
 	t.Name = r.area + "_" + t.Name
 	if !r.include(t) {
 		return
 	}
-	mcp.AddTool(r.server, t, h)
+	schema, err := jsonschema.For[In](nil)
+	if err != nil {
+		panic(fmt.Sprintf("tool %s: input schema: %v", t.Name, err))
+	}
+	t.InputSchema = schema
+	r.server.AddTool(t, func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if !r.opts.proxied {
+			if res := consent(req, t, r.opts.DisableElicitation); res != nil {
+				return res, nil
+			}
+		}
+		raw := req.Params.Arguments
+		if len(raw) == 0 || string(raw) == "null" {
+			raw = json.RawMessage("{}")
+		}
+		var args map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &args); err != nil {
+			return response.Fail(http.StatusBadRequest, "Invalid arguments: "+err.Error()), nil
+		}
+		if res := checkRequired(schema, args); res != nil {
+			return res, nil
+		}
+		var in In
+		if err := json.Unmarshal(raw, &in); err != nil {
+			return response.Fail(http.StatusBadRequest, "Invalid arguments: "+err.Error()), nil
+		}
+		res, out, err := h(ctx, req, in)
+		if err != nil {
+			return &mcp.CallToolResult{IsError: true, Content: []mcp.Content{&mcp.TextContent{Text: err.Error()}}}, nil
+		}
+		if res == nil {
+			b, err := json.Marshal(out)
+			if err != nil {
+				return nil, err
+			}
+			res = &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: string(b)}}}
+		}
+		return res, nil
+	})
+	if r.order != nil {
+		*r.order = append(*r.order, t.Name)
+	}
+}
+
+// checkRequired ports upstream's required-option validation: first every
+// missing option, else the first blank required string.
+func checkRequired(schema *jsonschema.Schema, args map[string]json.RawMessage) *mcp.CallToolResult {
+	var missing []string
+	for _, name := range schema.Required {
+		if v, ok := args[name]; !ok || string(v) == "null" {
+			missing = append(missing, "--"+name)
+		}
+	}
+	if len(missing) > 0 {
+		return response.Fail(http.StatusBadRequest, "Missing Required options: "+strings.Join(missing, ", "))
+	}
+	for _, name := range schema.Required {
+		var s string
+		if json.Unmarshal(args[name], &s) == nil && strings.TrimSpace(s) == "" {
+			return response.Fail(http.StatusBadRequest, "Option '--"+name+
+				"' was configured to require non-empty, non-whitespace values but one or more empty or whitespace values were provided.")
+		}
+	}
+	return nil
 }
 
 func (r *Registrar) include(t *mcp.Tool) bool {
@@ -108,7 +192,8 @@ func New(ctx context.Context, opts Options, areas ...Area) (*mcp.Server, error) 
 
 	switch mode {
 	case ModeAll:
-		return buildInnerServer(opts, areas), nil
+		s, _ := buildInnerServer(opts, areas)
+		return s, nil
 	case ModeConsolidated:
 		// Upstream builds this mode from consolidated command groups, and
 		// Fabric declares none (see internal/server/testdata/mode-consolidated.json),
@@ -130,12 +215,13 @@ func implementation() *mcp.Implementation {
 // buildInnerServer registers every area's tools directly on a fresh server,
 // applying the Options filters - the behavior of mode "all", and also the
 // hidden server that namespace and single mode proxy through.
-func buildInnerServer(opts Options, areas []Area) *mcp.Server {
+func buildInnerServer(opts Options, areas []Area) (*mcp.Server, []string) {
 	s := mcp.NewServer(implementation(), nil)
+	var order []string
 	for _, a := range areas {
-		a.Register(&Registrar{server: s, opts: opts, area: a.Name()})
+		a.Register(&Registrar{server: s, opts: opts, area: a.Name(), order: &order})
 	}
-	return s
+	return s, order
 }
 
 // describe returns the description and title an area's namespace/single mode

@@ -117,11 +117,9 @@ func parseRouteArgs(raw json.RawMessage) (intent, command, tool string, learn bo
 }
 
 // areaTools returns the inner tools registered for area, in the inner
-// server's tools/list order (alphabetical by name; the go-sdk's tool
-// registry doesn't preserve registration order - see internal/parity's
-// TestParityNamespaceLearn for why this is compared as a set against
-// upstream's registration-order listing).
-func areaTools(inner []*mcp.Tool, areaName string) []*mcp.Tool {
+// order the tools were registered in, as upstream lists a CommandGroup's
+// commands; the inner server's tools/list is sorted by name.
+func areaTools(inner []*mcp.Tool, areaName string, order []string) []*mcp.Tool {
 	prefix := areaName + "_"
 	var out []*mcp.Tool
 	for _, t := range inner {
@@ -129,6 +127,9 @@ func areaTools(inner []*mcp.Tool, areaName string) []*mcp.Tool {
 			out = append(out, t)
 		}
 	}
+	slices.SortStableFunc(out, func(a, b *mcp.Tool) int {
+		return slices.Index(order, a.Name) - slices.Index(order, b.Name)
+	})
 	return out
 }
 
@@ -140,7 +141,9 @@ func areaTools(inner []*mcp.Tool, areaName string) []*mcp.Tool {
 // porting NamespaceToolLoader.ListToolsHandler's AllToolsInGroupMatch
 // check), filtered by opts.Namespaces.
 func newNamespaceServer(ctx context.Context, opts Options, areas []Area) (*mcp.Server, error) {
-	inner := buildInnerServer(opts, areas)
+	innerOpts := opts
+	innerOpts.proxied = true
+	inner, order := buildInnerServer(innerOpts, areas)
 	sess, err := connectInMemory(ctx, inner)
 	if err != nil {
 		return nil, fmt.Errorf("connect inner server: %w", err)
@@ -155,16 +158,16 @@ func newNamespaceServer(ctx context.Context, opts Options, areas []Area) (*mcp.S
 		if len(opts.Namespaces) > 0 && !slices.Contains(opts.Namespaces, a.Name()) {
 			continue
 		}
-		tools := areaTools(innerTools.Tools, a.Name())
+		tools := areaTools(innerTools.Tools, a.Name(), order)
 		if len(tools) == 0 {
 			continue
 		}
-		registerNamespaceProxy(outer, a, tools, sess)
+		registerNamespaceProxy(outer, opts, a, tools, sess)
 	}
 	return outer, nil
 }
 
-func registerNamespaceProxy(outer *mcp.Server, a Area, tools []*mcp.Tool, sess *mcp.ClientSession) {
+func registerNamespaceProxy(outer *mcp.Server, opts Options, a Area, tools []*mcp.Tool, sess *mcp.ClientSession) {
 	description, title := describe(a)
 	fullDescription := routerSuffix
 	if description != "" {
@@ -178,14 +181,14 @@ func registerNamespaceProxy(outer *mcp.Server, a Area, tools []*mcp.Tool, sess *
 		Annotations: &mcp.ToolAnnotations{Title: title},
 	}
 	outer.AddTool(tool, func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		return handleNamespaceCall(ctx, sess, areaName, tools, req)
+		return handleNamespaceCall(ctx, opts, sess, areaName, tools, req)
 	})
 }
 
 // handleNamespaceCall ports NamespaceToolLoader.CallToolHandler, minus the
 // sampling-based command correction (see the package doc at the top of this
 // file).
-func handleNamespaceCall(ctx context.Context, sess *mcp.ClientSession, areaName string, tools []*mcp.Tool, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func handleNamespaceCall(ctx context.Context, opts Options, sess *mcp.ClientSession, areaName string, tools []*mcp.Tool, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	intent, command, _, learn, parameters := parseRouteArgs(req.Params.Arguments)
 	if !learn && intent != "" && command == "" {
 		learn = true
@@ -195,7 +198,7 @@ func handleNamespaceCall(ctx context.Context, sess *mcp.ClientSession, areaName 
 	case learn:
 		return namespaceLearnResult(areaName, tools), nil
 	case command != "":
-		return callNamedTool(ctx, sess, tools, command, parameters, func() *mcp.CallToolResult {
+		return callNamedTool(ctx, req, opts, sess, tools, command, parameters, func() *mcp.CallToolResult {
 			return unknownCommandResult(areaName, command, tools)
 		})
 	default:
@@ -263,7 +266,9 @@ To learn about a specific tool, use the "tool" argument with the name of the too
 // server, filtered by opts.Namespaces (porting SingleProxyToolLoader's
 // IsNamespaceAllowed and its own AllToolsInGroupMatch check).
 func newSingleServer(ctx context.Context, opts Options, areas []Area) (*mcp.Server, error) {
-	inner := buildInnerServer(opts, areas)
+	innerOpts := opts
+	innerOpts.proxied = true
+	inner, order := buildInnerServer(innerOpts, areas)
 	sess, err := connectInMemory(ctx, inner)
 	if err != nil {
 		return nil, fmt.Errorf("connect inner server: %w", err)
@@ -279,7 +284,7 @@ func newSingleServer(ctx context.Context, opts Options, areas []Area) (*mcp.Serv
 		if len(opts.Namespaces) > 0 && !slices.Contains(opts.Namespaces, a.Name()) {
 			continue
 		}
-		tools := areaTools(innerTools.Tools, a.Name())
+		tools := areaTools(innerTools.Tools, a.Name(), order)
 		if len(tools) == 0 {
 			continue
 		}
@@ -296,7 +301,7 @@ func newSingleServer(ctx context.Context, opts Options, areas []Area) (*mcp.Serv
 		Annotations: &mcp.ToolAnnotations{},
 	}
 	outer.AddTool(tool, func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		return handleSingleCall(ctx, sess, roots, byArea, req)
+		return handleSingleCall(ctx, opts, sess, roots, byArea, req)
 	})
 	return outer, nil
 }
@@ -304,7 +309,7 @@ func newSingleServer(ctx context.Context, opts Options, areas []Area) (*mcp.Serv
 // handleSingleCall ports SingleProxyToolLoader.CallToolHandler, minus the
 // sampling-based tool/command guessing (see the package doc at the top of
 // this file).
-func handleSingleCall(ctx context.Context, sess *mcp.ClientSession, roots []toolInfo, byArea map[string][]*mcp.Tool, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func handleSingleCall(ctx context.Context, opts Options, sess *mcp.ClientSession, roots []toolInfo, byArea map[string][]*mcp.Tool, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	intent, command, tool, learn, parameters := parseRouteArgs(req.Params.Arguments)
 	if intent != "" && tool == "" && command == "" && !learn {
 		learn = true
@@ -321,7 +326,7 @@ func handleSingleCall(ctx context.Context, sess *mcp.ClientSession, roots []tool
 			// Upstream: GetToolsInGroupAsync finds nothing -> RootLearnModeAsync.
 			return rootLearnResult(roots), nil
 		}
-		return callNamedTool(ctx, sess, tools, command, parameters, func() *mcp.CallToolResult {
+		return callNamedTool(ctx, req, opts, sess, tools, command, parameters, func() *mcp.CallToolResult {
 			// Upstream: no resolved tool -> ToolLearnModeAsync (a soft
 			// fallback, not an error - see NamedTool's caller for the
 			// namespace-mode equivalent, which errors instead).
@@ -368,7 +373,7 @@ func toolLearnResult(tool string, byArea map[string][]*mcp.Tool, roots []toolInf
 // callNamedTool resolves command against tools (case-insensitively, as
 // upstream does) and calls it on sess, or returns notFound()'s result if no
 // tool matches.
-func callNamedTool(ctx context.Context, sess *mcp.ClientSession, tools []*mcp.Tool, command string, parameters map[string]any, notFound func() *mcp.CallToolResult) (*mcp.CallToolResult, error) {
+func callNamedTool(ctx context.Context, req *mcp.CallToolRequest, opts Options, sess *mcp.ClientSession, tools []*mcp.Tool, command string, parameters map[string]any, notFound func() *mcp.CallToolResult) (*mcp.CallToolResult, error) {
 	var resolved *mcp.Tool
 	for _, t := range tools {
 		if strings.EqualFold(t.Name, command) {
@@ -378,6 +383,9 @@ func callNamedTool(ctx context.Context, sess *mcp.ClientSession, tools []*mcp.To
 	}
 	if resolved == nil {
 		return notFound(), nil
+	}
+	if res := consent(req, resolved, opts.DisableElicitation); res != nil {
+		return res, nil
 	}
 	res, err := sess.CallTool(ctx, &mcp.CallToolParams{Name: resolved.Name, Arguments: parameters})
 	if err != nil {

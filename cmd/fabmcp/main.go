@@ -48,6 +48,7 @@ func run(args []string) error {
 	fs.Var(&ns, "namespace", "expose only this namespace; repeatable")
 	fs.Var(&tools, "tool", "expose only this tool; repeatable")
 	fs.BoolVar(&opts.ReadOnly, "read-only", false, "expose only read-only tools")
+	fs.BoolVar(&opts.DisableElicitation, "dangerously-disable-elicitation", false, "run destructive tools without asking the user for consent")
 	debug := fs.Bool("debug", false, "debug logging to stderr")
 	if err := fs.Parse(args[2:]); err != nil {
 		return err

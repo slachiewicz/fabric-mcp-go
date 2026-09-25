@@ -106,7 +106,7 @@ func TestListPipelinesEmpty(t *testing.T) {
 func TestListPipelinesMissingWorkspace(t *testing.T) {
 	cs := session(t, func(http.ResponseWriter, *http.Request) { t.Error("API must not be called") })
 	env, isErr := call(t, cs, "datafactory_list-pipelines", map[string]any{"workspace-id": ""})
-	want := `{"duration":0,"message":"workspaceId is required and cannot be empty","status":400}`
+	want := `{"duration":0,"message":"Option '--workspace-id' was configured to require non-empty, non-whitespace values but one or more empty or whitespace values were provided.","status":400}`
 	if got := jsonOf(env); !isErr || got != want {
 		t.Errorf("got %s (isError=%v), want %s", got, isErr, want)
 	}
