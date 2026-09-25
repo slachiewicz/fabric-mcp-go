@@ -1,0 +1,27 @@
+{
+    "parameters": {
+        "workspaceId": "f089354e-8366-4e18-aea3-4cb4a3a50b48",
+        "environmentId": "41ce06d1-d81b-4ea0-bc6d-2ce3dd2f8e87",
+        "preview": false
+    },
+    "responses": {
+        "200": {
+            "body": {
+                "publishDetails": {
+                    "state": "Cancelled",
+                    "targetVersion": "d9d95b01-248f-4ef4-bd7e-9d3f1f6447be",
+                    "startTime": "2024-03-29T14:17:09.0697022Z",
+                    "endTime": "2024-03-29T14:48:18.0697022Z",
+                    "componentPublishInfo": {
+                        "sparkLibraries": {
+                            "state": "Cancelled"
+                        },
+                        "sparkSettings": {
+                            "state": "Cancelled"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
