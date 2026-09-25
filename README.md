@@ -3,7 +3,7 @@
 A Go implementation of the [Microsoft Fabric MCP Server](https://github.com/microsoft/mcp/tree/main/servers/Fabric.Mcp.Server).
 It keeps the upstream tool names, parameters and result format, so an existing `mcp.json` entry can point at this binary instead.
 
-Status: work in progress. Only the `docs_*` tools are being ported so far; OneLake, core and Data Factory tools follow.
+Status: work in progress. Only the `docs_*` tools are done so far; OneLake, core and Data Factory tools follow.
 
 ## Build and run
 
@@ -20,11 +20,15 @@ claude mcp add fabric -- /path/to/fabmcp server start
 
 ## Parity with upstream
 
-`internal/parity` compares this server's `tools/list` with a snapshot from the upstream release in `testdata/ref-tools.json`.
-To compare tool calls against the live upstream binary, set `FABMCP_REF` to its path:
+The target is upstream `main`, not the latest npm release.
+`internal/parity` compares this server's `tools/list` with a snapshot of upstream's in `testdata/ref-tools.json`.
+To also compare tool calls, build upstream with the .NET 10 SDK and point `FABMCP_REF` at the binary:
 
 ```bash
-FABMCP_REF=/path/to/upstream/fabmcp go test ./internal/parity/ -v
+git clone --depth 1 https://github.com/microsoft/mcp.git
+dotnet build mcp/servers/Fabric.Mcp.Server/src/Fabric.Mcp.Server.csproj -c Release
+DOTNET_ROOT=~/.dotnet FABMCP_REF=$PWD/mcp/servers/Fabric.Mcp.Server/src/bin/Release/fabmcp \
+  go test ./internal/parity/ -v
 ```
 
 ## License

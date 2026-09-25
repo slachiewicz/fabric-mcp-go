@@ -1,17 +1,18 @@
 // Package parity compares the Go Fabric MCP server (github.com/slachiewicz/fabric-mcp-go)
-// against the upstream .NET reference server (github.com/microsoft/mcp,
-// distributed on npm as @microsoft/fabric-mcp-darwin-arm64) over the MCP
-// stdio transport.
+// against the upstream .NET server (github.com/microsoft/mcp) over the MCP
+// stdio transport. The reference is upstream main, built from source:
 //
-// Set FABMCP_REF to the reference binary's path to run the live checks:
+//	git clone --depth 1 https://github.com/microsoft/mcp.git
+//	dotnet build mcp/servers/Fabric.Mcp.Server/src/Fabric.Mcp.Server.csproj -c Release
 //
-//	FABMCP_REF=$(ls ~/.npm/_npx/*/node_modules/@microsoft/fabric-mcp-darwin-arm64/dist/fabmcp) \
+// Set FABMCP_REF to the built binary to run the live checks. The binary is
+// framework-dependent, so DOTNET_ROOT must point at a .NET 10 runtime:
+//
+//	DOTNET_ROOT=~/.dotnet FABMCP_REF=mcp/servers/Fabric.Mcp.Server/src/bin/Release/fabmcp \
 //	    go test ./internal/parity/ -run Parity -v
 //
-// The reference binary is a full .NET host (ASP.NET Core pieces are linked
-// in even for the stdio transport) and takes on the order of 15-20s just to
-// complete the MCP initialize handshake on a cold run; connectTimeout below
-// is sized generously for that.
+// The reference server takes several seconds to complete the MCP
+// initialize handshake on a cold run; connectTimeout below allows for that.
 //
 // Run with -update (FABMCP_REF must be set) to refresh
 // testdata/ref-tools.json from a live reference server:
@@ -19,8 +20,7 @@
 //	FABMCP_REF=... go test ./internal/parity/ -run Parity -v -update
 //
 // Once that file exists, TestParityToolsList compares against it even when
-// FABMCP_REF is unset, so the tool-list parity check can run without the
-// (large, macOS/arm64-only) reference binary present. TestParityCalls
+// FABMCP_REF is unset, so the tool-list parity check runs without .NET. TestParityCalls
 // always needs a live reference server, since it exercises real tool calls
 // on both sides, so it is skipped when FABMCP_REF is unset.
 package parity

@@ -38,20 +38,11 @@ type exampleFileResult struct {
 }
 
 // Every tool in this area answers with a single JSON text content block
-// shaped like Microsoft.Mcp.Core's generic command response envelope -
-// {"status":<code>,"message":<text>,"results":<value>,"duration":<ms>} -
-// and no structuredContent. This was ported from the actual running
-// reference server (github.com/microsoft/mcp's fabmcp v1.4.0), not from
-// the upstream C# source tree: that source (unreleased, ahead of v1.4.0)
-// wraps every result in a per-command record - {"definition":...},
-// {"bestPractices":[...]}, {"publicApi":{...}} - but the released binary
-// does not, so the wrapper types those records would need
-// (GetItemDefinitionCommandResult, GetBestPracticesCommandResult,
-// GetItemApisCommandResult/GetPlatformApisCommandResult) are intentionally
-// absent here; their result values are ported bare. ItemTypeListCommandResult
-// and ExampleFileResult are the exception: v1.4.0 does wrap those two in
-// {"ItemTypes":[...]} and {"Examples":{...}}, so itemTypeListResult and
-// exampleFileResult above are kept.
+// shaped like Microsoft.Mcp.Core's command response envelope,
+// {"status":<code>,"message":<text>,"results":<value>,"duration":<ms>},
+// and no structuredContent. Results carry upstream main's per-command
+// result records ({"publicApi":...}, {"definition":...}, ...); the v1.4.0
+// release returned some of them unwrapped.
 
 // successEnvelope ports the {"status":200,"message":"Success","results":
 // ...,"duration":0} shape every successful call returns.
@@ -126,7 +117,7 @@ func itemAPISpecHandler(_ context.Context, _ *mcp.CallToolRequest, in itemTypeIn
 	if err != nil {
 		return handleExceptionEnvelope(err), nil, nil
 	}
-	return successEnvelope(api), nil, nil
+	return successEnvelope(map[string]any{"publicApi": api}), nil, nil
 }
 
 // platformAPISpecHandler ports GetPlatformApisCommand: always the
@@ -136,7 +127,7 @@ func platformAPISpecHandler(_ context.Context, _ *mcp.CallToolRequest, _ struct{
 	if err != nil {
 		return handleExceptionEnvelope(err), nil, nil
 	}
-	return successEnvelope(api), nil, nil
+	return successEnvelope(map[string]any{"publicApi": api}), nil, nil
 }
 
 // itemDefinitionHandler ports GetItemDefinitionCommand.
@@ -145,7 +136,7 @@ func itemDefinitionHandler(_ context.Context, _ *mcp.CallToolRequest, in itemTyp
 	if err != nil {
 		return notFoundEnvelope(fmt.Sprintf("No item definition found for item type %s.", in.ItemType)), nil, nil
 	}
-	return successEnvelope(def), nil, nil
+	return successEnvelope(map[string]any{"definition": def}), nil, nil
 }
 
 // bestPracticesHandler ports GetBestPracticesCommand.
@@ -154,7 +145,7 @@ func bestPracticesHandler(_ context.Context, _ *mcp.CallToolRequest, in topicInp
 	if err != nil {
 		return notFoundEnvelope(fmt.Sprintf("No best practice resources found for %s", in.Topic)), nil, nil
 	}
-	return successEnvelope(practices), nil, nil
+	return successEnvelope(map[string]any{"bestPractices": practices}), nil, nil
 }
 
 // apiExamplesHandler ports GetExamplesCommand. Unlike the other item-type

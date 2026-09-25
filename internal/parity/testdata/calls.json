@@ -6,7 +6,9 @@
   },
   {
     "tool": "docs_item-api-spec",
-    "args": { "item-type": "lakehouse" }
+    "args": {
+      "item-type": "lakehouse"
+    }
   },
   {
     "tool": "docs_platform-api-spec",
@@ -14,14 +16,50 @@
   },
   {
     "tool": "docs_item-definitions",
-    "args": { "item-type": "lakehouse" }
+    "args": {
+      "item-type": "lakehouse"
+    }
   },
   {
     "tool": "docs_best-practices",
-    "args": { "topic": "throttling" }
+    "args": {
+      "topic": "throttling"
+    }
   },
   {
     "tool": "docs_api-examples",
-    "args": { "item-type": "lakehouse" }
+    "args": {
+      "item-type": "lakehouse"
+    }
+  },
+  {
+    "tool": "docs_item-api-spec",
+    "args": {
+      "item-type": "nosuchtype"
+    }
+  },
+  {
+    "tool": "docs_item-api-spec",
+    "args": {
+      "item-type": "common"
+    }
+  },
+  {
+    "tool": "docs_item-definitions",
+    "args": {
+      "item-type": "nosuchtype"
+    }
+  },
+  {
+    "tool": "docs_best-practices",
+    "args": {
+      "topic": "nosuchtopic"
+    }
+  },
+  {
+    "tool": "docs_api-examples",
+    "args": {
+      "item-type": "nosuchtype"
+    }
   }
 ]

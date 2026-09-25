@@ -1,6 +1,89 @@
 [
   {
     "_meta": {
+      "MicrosoftMcpToolId": "bfdfd3c0-4551-4454-a930-5bf5b1ad5690"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create Fabric Item"
+    },
+    "description": "Creates a new item in a Fabric workspace. Use this when the user wants to create a Lakehouse, Notebook, or other Fabric item type. Requires workspace ID, item name, and item type.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "description": "The description for the item.",
+          "type": "string"
+        },
+        "display-name": {
+          "description": "The display name for the item.",
+          "type": "string"
+        },
+        "item-type": {
+          "description": "The type of the Fabric item (e.g., Lakehouse, Notebook, etc.).",
+          "type": "string"
+        },
+        "workspace": {
+          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "display-name",
+        "item-type"
+      ],
+      "type": "object"
+    },
+    "name": "core_create-item"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "3b8bc9c0-b833-4a61-9278-d58e366a70d7"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Search Catalog"
+    },
+    "description": "Searches the Microsoft Fabric OneLake catalog for items matching the specified criteria. Supports cross-workspace search over catalog metadata and returns results filtered to entries the calling principal is authorized to access. Use this when the user wants to discover or find Fabric items (Lakehouse, Report, Notebook, and other item types) across workspaces by name, description, or workspace name. Optionally filter by item type.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "continuation-token": {
+          "description": "A token for retrieving the next page of results.",
+          "type": "string"
+        },
+        "filter": {
+          "description": "The filter for the search. Supports filtering by type of entries. Supported operators: eq (Equals), ne (Not Equals), or (Logical OR), () (Parentheses for grouping). Example: \"Type eq 'Report' or Type eq 'Lakehouse'\". Supported item types include Report, Lakehouse, Notebook, Warehouse, SemanticModel, KQLDatabase, and DataPipeline; for the full list see the Catalog Search API reference at https://learn.microsoft.com/rest/api/fabric/core/catalog/search.",
+          "type": "string"
+        },
+        "page-size": {
+          "description": "The page size that needs to be returned. Must be between 1 and 1000.",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "search": {
+          "description": "The text query for the search. Supports searching across display name, description and workspace name of the catalog entry.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "core_search-catalog"
+  },
+  {
+    "_meta": {
       "MicrosoftMcpToolId": "3efdeea3-ee84-43e7-b7a9-c4accb03795a"
     },
     "annotations": {
