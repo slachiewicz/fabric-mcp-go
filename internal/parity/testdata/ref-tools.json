@@ -1,0 +1,148 @@
+[
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "3efdeea3-ee84-43e7-b7a9-c4accb03795a"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "API Examples"
+    },
+    "description": "Retrieves example API request and response files for a Microsoft Fabric item type. Use this when the user needs sample API calls or implementation examples. Returns a dictionary of example files with their contents.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-type": {
+          "description": "The Microsoft Fabric item type (e.g. 'notebook', 'lakehouse', 'dataPipeline', 'report', 'warehouse'). Also accepts a few non-item areas: 'platform' and 'admin' (platform and tenant APIs), 'spark' (workspace Spark settings), and 'realTimeIntelligence' (workload-level copilot APIs). Call the 'list-item-types' tool for the full list of supported values.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item-type"
+      ],
+      "type": "object"
+    },
+    "name": "docs_api-examples"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "0a73ecc9-d257-4ff3-8e05-fd3158c2cd31"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Best Practices"
+    },
+    "description": "Retrieves embedded best practice documentation for a specific Fabric topic. Use this when the user needs guidance, recommendations, or implementation patterns for Fabric features. Returns detailed best practice content.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "topic": {
+          "description": "The best practice topic to retrieve documentation for.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "topic"
+      ],
+      "type": "object"
+    },
+    "name": "docs_best-practices"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "97229a98-c1ae-4255-a6e2-07631c2a42c5"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Item API Specification"
+    },
+    "description": "Retrieves the complete OpenAPI specification for a specific Microsoft Fabric item type. Use this when the user needs detailed API documentation for an item type such as notebook, lakehouse or report. Returns the full API spec in JSON format.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-type": {
+          "description": "The Microsoft Fabric item type (e.g. 'notebook', 'lakehouse', 'dataPipeline', 'report', 'warehouse'). Also accepts a few non-item areas: 'platform' and 'admin' (platform and tenant APIs), 'spark' (workspace Spark settings), and 'realTimeIntelligence' (workload-level copilot APIs). Call the 'list-item-types' tool for the full list of supported values.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item-type"
+      ],
+      "type": "object"
+    },
+    "name": "docs_item-api-spec"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "445c49f3-2a5d-478a-82ca-87fde1a7943e"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Item Definitions"
+    },
+    "description": "Retrieves the JSON schema definition for a Microsoft Fabric item type. Use this when the user needs to understand an item's structure or validate an item definition. Returns the schema definition for the specified item type.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-type": {
+          "description": "The Microsoft Fabric item type (e.g. 'notebook', 'lakehouse', 'dataPipeline', 'report', 'warehouse'). Also accepts a few non-item areas: 'platform' and 'admin' (platform and tenant APIs), 'spark' (workspace Spark settings), and 'realTimeIntelligence' (workload-level copilot APIs). Call the 'list-item-types' tool for the full list of supported values.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item-type"
+      ],
+      "type": "object"
+    },
+    "name": "docs_item-definitions"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "b1f80251-df7b-4054-953b-5f452c42dd09"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Available Fabric Item Types"
+    },
+    "description": "Lists the Microsoft Fabric item types that have public API specifications available. Use this when the user needs to discover which Fabric APIs exist. Returns item type names such as notebook, lakehouse, dataPipeline and report, plus a few non-item areas: platform and admin (platform and tenant APIs), spark (workspace Spark settings) and realTimeIntelligence (workload-level copilot APIs).",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {},
+      "type": "object"
+    },
+    "name": "docs_list-item-types"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "2338df97-d6d9-4f1d-9e92-e118efe9c643"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Platform API Specification"
+    },
+    "description": "Retrieves the OpenAPI specification for core Fabric platform APIs. Use this when the user needs documentation for cross-cutting platform APIs like workspace management. Returns complete platform API specification.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {},
+      "type": "object"
+    },
+    "name": "docs_platform-api-spec"
+  }
+]

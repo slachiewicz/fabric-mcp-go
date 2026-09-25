@@ -1,0 +1,26 @@
+[
+  {
+    "tool": "docs_list-item-types",
+    "args": {}
+  },
+  {
+    "tool": "docs_item-api-spec",
+    "args": { "item-type": "lakehouse" }
+  },
+  {
+    "tool": "docs_platform-api-spec",
+    "args": {}
+  },
+  {
+    "tool": "docs_item-definitions",
+    "args": { "item-type": "lakehouse" }
+  },
+  {
+    "tool": "docs_best-practices",
+    "args": { "topic": "throttling" }
+  },
+  {
+    "tool": "docs_api-examples",
+    "args": { "item-type": "lakehouse" }
+  }
+]
