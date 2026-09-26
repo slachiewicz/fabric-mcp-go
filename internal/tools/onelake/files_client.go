@@ -16,6 +16,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/text/collate"
+	"golang.org/x/text/language"
 )
 
 // fileSystemItem ports upstream's FileSystemItem model. OneLake writes
@@ -189,14 +192,26 @@ func (a *Area) listPathRaw(ctx context.Context, ws, item, p string, recursive bo
 
 // sortFileSystemItems ports the `OrderBy(f => f.Type == "directory" ? 0 : 1)
 // .ThenBy(f => f.Name)` upstream applies after every listing: directories
-// first, then files, each group alphabetical by name.
+// first, then files, each group ordered by name the way .NET's default
+// string comparer (`string.CompareTo`, culture-aware, invariant culture on
+// a server) orders it - not Go's byte order, which puts every ASCII
+// punctuation character (e.g. the "_" in "_last_checkpoint") after digits
+// and letters, while .NET/ICU's root collation sorts it before them.
+// language.Und selects ICU's root/default collation table, the closest
+// available match to .NET's invariant culture; verified live against the
+// reference server on a directory that mixes leading punctuation and
+// digits (see calls_onelake_files.json).
+//
+// collate.Collator holds per-comparison iterator state and isn't safe for
+// concurrent use, so a fresh one is built per call rather than shared.
 func sortFileSystemItems(items []fileSystemItem) {
+	c := collate.New(language.Und)
 	sort.SliceStable(items, func(i, j int) bool {
 		ri, rj := rank(items[i]), rank(items[j])
 		if ri != rj {
 			return ri < rj
 		}
-		return items[i].Name < items[j].Name
+		return c.CompareString(items[i].Name, items[j].Name) < 0
 	})
 }
 

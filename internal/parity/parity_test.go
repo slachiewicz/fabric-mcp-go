@@ -299,6 +299,14 @@ type toolCall struct {
 	// PathsOnly skips the value comparison, for results that carry request
 	// IDs or other per-call values.
 	PathsOnly bool `json:"pathsOnly"`
+	// IgnoreKeys removes every map key in this list, recursively, from
+	// both results before either comparison. Use it for a field that's
+	// flaky in a way PathsOnly can't mask because it affects the very set
+	// of JSON key paths - such as a field the live backend includes for
+	// one client and not the other (not request-driven; see
+	// calls_onelake_security.json's list-data-access-roles case) - or a
+	// volatile per-call value that isn't a request ID.
+	IgnoreKeys []string `json:"ignoreKeys"`
 }
 
 func loadCalls(t *testing.T) []toolCall {
@@ -369,6 +377,11 @@ func compareCall(t *testing.T, ctx context.Context, refSess, ourSess *mcp.Client
 		t.Fatalf("decode our result: %v", err)
 	}
 
+	if len(call.IgnoreKeys) > 0 {
+		ignore := toSet(call.IgnoreKeys)
+		refVal, ourVal = stripKeys(refVal, ignore), stripKeys(ourVal, ignore)
+	}
+
 	refPaths := collectPaths("", refVal)
 	ourPaths := collectPaths("", ourVal)
 	if diff := setDiff(refPaths, ourPaths); diff != "" {
@@ -414,6 +427,29 @@ func sortStringArrays(v any) any {
 		}
 	}
 	return v
+}
+
+// stripKeys returns v with every map key in keys removed, recursively; see
+// toolCall.IgnoreKeys.
+func stripKeys(v any, keys map[string]bool) any {
+	switch x := v.(type) {
+	case map[string]any:
+		for k, e := range x {
+			if keys[k] {
+				delete(x, k)
+				continue
+			}
+			x[k] = stripKeys(e, keys)
+		}
+		return x
+	case []any:
+		for i, e := range x {
+			x[i] = stripKeys(e, keys)
+		}
+		return x
+	default:
+		return v
+	}
 }
 
 // resultValue extracts the JSON value a call result carries: its
@@ -497,7 +533,16 @@ func startSession(t *testing.T, ctx context.Context, label, path string, args, e
 	connectCtx, cancel := context.WithTimeout(ctx, connectTimeout)
 	defer cancel()
 
-	client := mcp.NewClient(&mcp.Implementation{Name: "fabmcp-parity", Version: "0.0.0"}, nil)
+	client := mcp.NewClient(&mcp.Implementation{Name: "fabmcp-parity", Version: "0.0.0"}, &mcp.ClientOptions{
+		// Both sessions get an elicitation handler that always approves, so
+		// destructive tools (onelake_delete-file and friends) reach their
+		// real command instead of both sides just returning the same
+		// "client does not support elicitation" refusal text - see
+		// testdata/calls_destructive.json.
+		ElicitationHandler: func(context.Context, *mcp.ElicitRequest) (*mcp.ElicitResult, error) {
+			return &mcp.ElicitResult{Action: "accept", Content: map[string]any{"decision": "accept"}}, nil
+		},
+	})
 	sess, err := client.Connect(connectCtx, &mcp.CommandTransport{Command: cmd}, nil)
 	if err != nil {
 		t.Fatalf("connect to %s server (%s %s): %v\nstderr:\n%s", label, path, strings.Join(args, " "), err, stderr.String())

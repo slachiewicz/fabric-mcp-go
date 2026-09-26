@@ -2,7 +2,7 @@
   {"tool": "onelake_list-files", "args": {}},
   {"tool": "onelake_list-files", "args": {"workspace": "polytable-e2e"}},
   {"tool": "onelake_list-files", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse"}, "pathsOnly": true},
-  {"tool": "onelake_list-files", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "path": "Tables/orders/_delta_log"}, "pathsOnly": true},
+  {"tool": "onelake_list-files", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "path": "Tables/orders/_delta_log"}},
   {"tool": "onelake_list-files", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "path": "Tables/orders/_delta_log", "format": "raw"}, "pathsOnly": true},
 
   {"tool": "onelake_download-file", "args": {"file-path": "x"}},

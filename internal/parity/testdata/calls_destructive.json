@@ -1,0 +1,7 @@
+[
+  {"tool": "onelake_delete-file", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "file-path": "Files/nonexistent-fabmcp-parity-check.bin"}, "pathsOnly": true},
+  {"tool": "onelake_delete-directory", "args": {"workspace": "polytable-e2e", "item": "polytable_lh.Lakehouse", "directory-path": "Files/nonexistent-fabmcp-parity-dir"}, "pathsOnly": true},
+  {"tool": "onelake_delete-shortcut", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d", "shortcut-path": "Files", "shortcut-name": "nonexistent-fabmcp-parity-shortcut"}, "pathsOnly": true},
+  {"tool": "onelake_delete-data-access-role", "args": {"item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d", "workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "role-name": "nonexistentParityRole"}, "pathsOnly": true},
+  {"tool": "onelake_upload-file", "args": {"workspace": "polytable-e2e", "item": "does-not-exist-item.Lakehouse", "file-path": "Files/nonexistent-fabmcp-parity-upload.txt", "content": "parity-check", "content-type": "text/plain"}, "pathsOnly": true}
+]

@@ -1,6 +1,7 @@
 [
   {"tool": "onelake_list-data-access-roles", "args": {"workspace": "polytable-e2e", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d"}},
   {"tool": "onelake_list-data-access-roles", "args": {"item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d"}},
+  {"tool": "onelake_list-data-access-roles", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d"}, "ignoreKeys": ["eTag", "id"]},
   {"tool": "onelake_get-data-access-role", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d", "role-name": "DefaultReader"}},
   {"tool": "onelake_get-data-access-role", "args": {"workspace-id": "f295f70e-fc97-4cf7-89c2-a0c75005ef3b", "item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d", "role-name": "NoSuchRole"}, "pathsOnly": true},
   {"tool": "onelake_get-data-access-role", "args": {"item-id": "0049cf83-d5a9-40f0-9dc4-598a1386945d", "role-name": "DefaultReader"}},
