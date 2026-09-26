@@ -104,6 +104,8 @@ DOTNET_ROOT=~/.dotnet FABMCP_REF=$PWD/mcp/servers/Fabric.Mcp.Server/src/bin/Rele
   go test ./internal/parity/ -v
 ```
 
+To compare startup time, memory and per-call latency with the upstream build, add `-run Benchmark -parity.bench` to that command, and `-parity.bench.network` to include a live Fabric call.
+
 Tests tagged `live` create and delete items in a workspace you reserve for them:
 
 ```bash

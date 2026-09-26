@@ -77,6 +77,10 @@ check tool-list go test -count=1 ./internal/parity/ -run TestParityToolsList
 check namespace-mode go test -count=1 ./internal/parity/ -run TestParityNamespaceMode
 check docs-calls go test -count=1 ./internal/parity/ -run TestParityCalls -parity.only '^docs_'
 
+# Informational: a slow benchmark doesn't fail the sync.
+(cd "$root" && go test -count=1 -timeout 20m ./internal/parity/ -run TestBenchmark \
+  -parity.bench -parity.bench.out "$work/bench.md") >"$work/bench.log" 2>&1 || true
+
 {
   echo "Syncs with upstream [microsoft/mcp@${new_sha:0:7}](https://github.com/microsoft/mcp/commit/$new_sha), up from [${old_sha:0:7}](https://github.com/microsoft/mcp/compare/$old_sha...$new_sha)."
   echo
@@ -108,6 +112,14 @@ check docs-calls go test -count=1 ./internal/parity/ -run TestParityCalls -parit
       echo "</details>"
     fi
   done
+  if [[ -s $work/bench.md ]]; then
+    echo
+    echo "## Performance"
+    echo
+    echo "Docs tools on the sync runner, Go against the upstream build:"
+    echo
+    cat "$work/bench.md"
+  fi
   echo
   echo "## Upstream changes to port"
   echo
