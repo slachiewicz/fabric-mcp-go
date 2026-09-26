@@ -14,18 +14,6 @@ import (
 	"github.com/slachiewicz/fabric-mcp-go/internal/server"
 )
 
-// secArgError mirrors .NET's ArgumentException the way AuthenticatedCommand's
-// *default* GetErrorMessage/GetStatusCode map it (400, message verbatim) —
-// distinct from errors.go's argError, which carries OneLakeCommandValidators'
-// "Invalid argument: " prefix that only the Item/File commands use. None of
-// the security or settings commands override those methods, so their
-// service-layer failures go through response.Error via this type.
-type secArgError struct{ msg string }
-
-func (e *secArgError) Error() string { return e.msg }
-func (e *secArgError) Status() int   { return http.StatusBadRequest }
-func (e *secArgError) Type() string  { return "ArgumentException" }
-
 func (a *Area) registerSecurity(r *server.Registrar) {
 	server.AddTool(r, &mcp.Tool{
 		Name: "list-data-access-roles",
@@ -264,11 +252,11 @@ func (a *Area) createOrUpdateDataAccessRole(ctx context.Context, _ *mcp.CallTool
 		role = buildRoleDefinition(in)
 	} else {
 		if err := json.Unmarshal([]byte(in.RoleDefinition), &role); err != nil {
-			return response.Error(&secArgError{msg: fmt.Sprintf("Invalid role definition JSON: %s (Parameter 'roleDefinitionJson')", err.Error())}), nil, nil
+			return response.Error(&argError{msg: fmt.Sprintf("Invalid role definition JSON: %s (Parameter 'roleDefinitionJson')", err.Error())}), nil, nil
 		}
 	}
 	if strings.TrimSpace(role.Name) == "" {
-		return response.Error(&secArgError{msg: "Role definition must include a non-empty 'name' property. (Parameter 'roleDefinitionJson')"}), nil, nil
+		return response.Error(&argError{msg: "Role definition must include a non-empty 'name' property. (Parameter 'roleDefinitionJson')"}), nil, nil
 	}
 
 	if role.Members != nil && len(role.Members.MicrosoftEntraMembers) > 0 {

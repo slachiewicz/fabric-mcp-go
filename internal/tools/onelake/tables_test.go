@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/slachiewicz/fabric-mcp-go/internal/response"
 )
 
 // TestTableWarehousePrefix locks in GetWarehousePrefixAsync's split
@@ -47,12 +48,12 @@ func TestTableWarehousePrefix(t *testing.T) {
 		t.Errorf("listed %d times for a GUID workspace, want 1", listed)
 	}
 
-	// GUID workspace, unresolvable item: opError, mapped to 422 by tableError.
+	// GUID workspace, unresolvable item: opError, mapped to 422 by response.Error.
 	_, _, _, err = a.tableWarehousePrefix(t.Context(), guid, "no-such-item")
 	if err == nil || !strings.Contains(err.Error(), "Unable to resolve item 'no-such-item'") {
 		t.Errorf("unresolvable item: err = %v", err)
 	}
-	res := tableError(err)
+	res := response.Error(err)
 	if !res.IsError {
 		t.Fatal("expected an error result")
 	}

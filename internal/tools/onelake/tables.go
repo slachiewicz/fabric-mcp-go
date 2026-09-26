@@ -3,7 +3,6 @@ package onelake
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -104,18 +103,18 @@ func (a *Area) getTableConfig(ctx context.Context, _ *mcp.CallToolRequest, in wo
 
 	normWS, normItem, prefix, err := a.tableWarehousePrefix(ctx, ws, item)
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	// warehouse is the same escaped workspace/item prefix as the path
 	// segment below, interpolated as-is (upstream doesn't re-escape it).
 	u := a.c.ep.table + "/iceberg/v1/config?warehouse=" + prefix
 	raw, err := a.c.oneLake(ctx, http.MethodGet, u, nil)
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	cfg, err := parseTableJSON(raw, "table configuration")
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	return response.Success(map[string]any{
 		"workspace": normWS, "item": normItem, "configuration": cfg, "rawResponse": string(raw),
@@ -132,16 +131,16 @@ func (a *Area) listTableNamespaces(ctx context.Context, _ *mcp.CallToolRequest, 
 
 	normWS, normItem, prefix, err := a.tableWarehousePrefix(ctx, ws, item)
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	u := a.c.ep.table + "/iceberg/v1/" + prefix + "/namespaces"
 	raw, err := a.c.oneLake(ctx, http.MethodGet, u, nil)
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	namespaces, err := parseTableJSON(raw, "table namespace")
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	return response.Success(map[string]any{
 		"workspace": normWS, "item": normItem, "namespaces": namespaces, "rawResponse": string(raw),
@@ -167,16 +166,16 @@ func (a *Area) getTableNamespace(ctx context.Context, _ *mcp.CallToolRequest, in
 
 	normWS, normItem, prefix, err := a.tableWarehousePrefix(ctx, ws, item)
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	u := a.c.ep.table + "/iceberg/v1/" + prefix + "/namespaces/" + url.PathEscape(ns)
 	raw, err := a.c.oneLake(ctx, http.MethodGet, u, nil)
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	def, err := parseTableJSON(raw, "table namespace")
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	return response.Success(map[string]any{
 		"workspace": normWS, "item": normItem, "namespace": ns, "definition": def, "rawResponse": string(raw),
@@ -202,16 +201,16 @@ func (a *Area) listTables(ctx context.Context, _ *mcp.CallToolRequest, in tableL
 
 	normWS, normItem, prefix, err := a.tableWarehousePrefix(ctx, ws, item)
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	u := a.c.ep.table + "/iceberg/v1/" + prefix + "/namespaces/" + url.PathEscape(ns) + "/tables"
 	raw, err := a.c.oneLake(ctx, http.MethodGet, u, nil)
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	tables, err := parseTableJSON(raw, "table list")
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	return response.Success(map[string]any{
 		"workspace": normWS, "item": normItem, "namespace": ns, "tables": tables, "rawResponse": string(raw),
@@ -239,16 +238,16 @@ func (a *Area) getTable(ctx context.Context, _ *mcp.CallToolRequest, in tableGet
 
 	normWS, normItem, prefix, err := a.tableWarehousePrefix(ctx, ws, item)
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	u := a.c.ep.table + "/iceberg/v1/" + prefix + "/namespaces/" + url.PathEscape(ns) + "/tables/" + url.PathEscape(table)
 	raw, err := a.c.oneLake(ctx, http.MethodGet, u, nil)
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	def, err := parseTableJSON(raw, "table")
 	if err != nil {
-		return tableError(err), nil, nil
+		return response.Error(err), nil, nil
 	}
 	return response.Success(map[string]any{
 		"workspace": normWS, "item": normItem, "namespace": ns, "table": table, "definition": def, "rawResponse": string(raw),
@@ -302,31 +301,9 @@ func parseTableJSON(raw []byte, what string) (json.RawMessage, error) {
 	if !json.Valid(raw) {
 		// Upstream's JsonDocument.Parse throws JsonException here, which
 		// GetStatusCode's default switch doesn't special-case either
-		// (falls to 500); not an argError/opError, so tableError below
+		// (falls to 500); not an argError/opError, so response.Error below
 		// also falls through to response.Error's default mapping.
 		return nil, fmt.Errorf("parse OneLake %s response: invalid JSON", what)
 	}
 	return json.RawMessage(raw), nil
-}
-
-// tableError ports the default AuthenticatedCommand exception mapping the
-// Table commands use directly, since none of them override it with
-// OneLakeCommandValidators the way the other OneLake command groups do
-// (see errorResult in errors.go for that variant): ArgumentException maps
-// to 400 and InvalidOperationException to 422, both reporting the
-// exception's own message unprefixed. Everything else (credentials, Fabric
-// API errors, HttpRequestException, canceled/timed-out operations) is the
-// same mapping response.Error already implements, so it's reused as-is.
-func tableError(err error) *mcp.CallToolResult {
-	var (
-		arg *argError
-		op  *opError
-	)
-	switch {
-	case errors.As(err, &arg):
-		return response.Exc(http.StatusBadRequest, "ArgumentException", arg.msg, arg.msg)
-	case errors.As(err, &op):
-		return response.Exc(http.StatusUnprocessableEntity, "InvalidOperationException", op.msg, op.msg)
-	}
-	return response.Error(err)
 }

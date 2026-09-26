@@ -114,7 +114,7 @@ func (a *Area) resolvePrincipals(ctx context.Context, members []microsoftEntraMe
 		}
 	}
 	if len(errs) > 0 {
-		return &secArgError{msg: "Failed to resolve one or more principals:\n" + strings.Join(errs, "\n")}
+		return &argError{msg: "Failed to resolve one or more principals:\n" + strings.Join(errs, "\n")}
 	}
 	return nil
 }
