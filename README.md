@@ -115,6 +115,14 @@ Tests tagged `live` create and delete items in a workspace you reserve for them:
 FABMCP_E2E_WORKSPACE=<workspace-id> go test -tags live -p 1 ./... -run Live
 ```
 
+`internal/httpserver`'s live test runs the HTTP transport end to end with on-behalf-of auth.
+It needs an Entra app that exposes the `Mcp.Tools.ReadWrite` scope, issues v2.0 tokens, pre-authorizes the Azure CLI (`04b07795-8ddb-461a-bbee-02f9e1bf7b46`) on that scope, and has admin-consented delegated Fabric (Power BI Service) and Azure Storage permissions:
+
+```bash
+AzureAd__TenantId=<tenant> AzureAd__ClientId=<app> AzureAd__ClientSecret=<secret> \
+  go test -tags live ./internal/httpserver/ -run Live
+```
+
 ## License
 
 MIT. Portions derived from Microsoft's Fabric MCP Server and the Fabric REST API specifications; see [NOTICE](NOTICE).
