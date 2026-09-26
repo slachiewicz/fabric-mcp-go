@@ -88,11 +88,6 @@ These are deliberate:
 - There's no telemetry.
 - `--mode consolidated` exposes no tools, as upstream does for Fabric.
 
-These are limitations:
-
-- Namespace and single mode don't use MCP sampling to guess a command from the intent when the command name is unknown.
-- `onelake_list-files` sorts names with Go's byte order, not .NET's culture-aware order, so names starting with punctuation can come out in a different order.
-
 ## Development
 
 ```bash
