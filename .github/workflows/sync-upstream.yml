@@ -61,6 +61,17 @@ jobs:
           else
             gh pr create --head sync/upstream --title "$title" --body-file "$REPORT"
           fi
+      - name: Summarize
+        if: always()
+        env:
+          REPORT: ${{ runner.temp }}/sync/report.md
+        run: if [ -f "$REPORT" ]; then cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: sync-logs
+          path: ${{ runner.temp }}/sync/*.log
+          if-no-files-found: ignore
       - name: Fail when a check failed
         if: steps.sync.outputs.status != '0'
         run: exit 1
