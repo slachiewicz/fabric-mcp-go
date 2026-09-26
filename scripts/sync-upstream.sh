@@ -72,7 +72,7 @@ check() {
     status=1
   fi
 }
-check unit go test -count=1 ./...
+check unit env -u FABMCP_REF go test -count=1 ./...
 check tool-list go test -count=1 ./internal/parity/ -run TestParityToolsList
 check namespace-mode go test -count=1 ./internal/parity/ -run TestParityNamespaceMode
 check docs-calls go test -count=1 ./internal/parity/ -run TestParityCalls -parity.only '^docs_'
