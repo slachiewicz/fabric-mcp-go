@@ -83,8 +83,21 @@ func TestAuthenticated(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = resp.Body.Close()
-	if resp.StatusCode != http.StatusUnauthorized || !strings.Contains(resp.Header.Get("WWW-Authenticate"), srv.URL+"/.well-known/oauth-protected-resource") {
-		t.Errorf("no token: %d %q", resp.StatusCode, resp.Header.Get("WWW-Authenticate"))
+	host := strings.TrimPrefix(srv.URL, "http://")
+	if want := `Bearer realm="` + host + `", resource_metadata="` + srv.URL + `/.well-known/oauth-protected-resource"`; resp.StatusCode != http.StatusUnauthorized || resp.Header.Get("WWW-Authenticate") != want {
+		t.Errorf("no token: %d %q, want %q", resp.StatusCode, resp.Header.Get("WWW-Authenticate"), want)
+	}
+
+	// An invalid token gets error="invalid_token".
+	req0, _ := http.NewRequest(http.MethodPost, srv.URL+"/", strings.NewReader(`{}`))
+	req0.Header.Set("Authorization", "Bearer not-a-jwt")
+	resp, err = http.DefaultClient.Do(req0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if !strings.HasSuffix(resp.Header.Get("WWW-Authenticate"), `, error="invalid_token"`) || resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("invalid token: %d %q", resp.StatusCode, resp.Header.Get("WWW-Authenticate"))
 	}
 
 	resp, err = http.Get(srv.URL + "/.well-known/oauth-protected-resource")
@@ -107,8 +120,8 @@ func TestAuthenticated(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = resp.Body.Close()
-	if resp.StatusCode != http.StatusForbidden {
-		t.Errorf("missing scope: status %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusForbidden || resp.Header.Get("WWW-Authenticate") != "" {
+		t.Errorf("missing scope: status %d, WWW-Authenticate %q", resp.StatusCode, resp.Header.Get("WWW-Authenticate"))
 	}
 
 	// With the app permission the tool runs and sees the caller's token.

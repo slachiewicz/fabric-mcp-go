@@ -114,13 +114,46 @@ func Handler(s *mcp.Server, cfg *Config, verify sdkauth.TokenVerifier) (http.Han
 		}).ServeHTTP(w, r)
 	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		cw := &challengeWriter{ResponseWriter: w, r: r}
 		sdkauth.RequireBearerToken(verify, &sdkauth.RequireBearerTokenOptions{
-			ResourceMetadataURL: baseURL(r) + "/.well-known/oauth-protected-resource",
-			Scopes:              []string{requiredScope},
-		})(mcpHandler).ServeHTTP(w, r)
+			Scopes: []string{requiredScope},
+		})(mcpHandler).ServeHTTP(cw, r)
 	})
 	return mux, nil
 }
+
+// challengeWriter sets the WWW-Authenticate header upstream's JWT bearer
+// handler sends: realm and resource metadata on 401, plus
+// error="invalid_token" when a token was presented, and no challenge on a
+// 403 for a missing scope.
+type challengeWriter struct {
+	http.ResponseWriter
+	r *http.Request
+}
+
+func (c *challengeWriter) WriteHeader(code int) {
+	h := c.Header()
+	switch code {
+	case http.StatusUnauthorized:
+		v := fmt.Sprintf(`Bearer realm="%s", resource_metadata="%s"`, c.r.Host, baseURL(c.r)+"/.well-known/oauth-protected-resource")
+		if c.r.Header.Get("Authorization") != "" {
+			v += `, error="invalid_token"`
+		}
+		h.Set("WWW-Authenticate", v)
+	case http.StatusForbidden:
+		h.Del("WWW-Authenticate")
+	}
+	c.ResponseWriter.WriteHeader(code)
+}
+
+// Flush and Unwrap keep streaming responses working through the wrapper.
+func (c *challengeWriter) Flush() {
+	if f, ok := c.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+func (c *challengeWriter) Unwrap() http.ResponseWriter { return c.ResponseWriter }
 
 // baseURL is the scheme and host the caller used. X-Forwarded-Proto is
 // honoured only with AZURE_MCP_DANGEROUSLY_ENABLE_FORWARDED_HEADERS=true.
