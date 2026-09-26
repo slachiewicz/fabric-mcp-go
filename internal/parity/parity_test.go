@@ -36,6 +36,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"runtime"
 	"slices"
 	"sort"
 	"strings"
@@ -581,7 +582,11 @@ func refEnv() []string {
 func buildOurBinary(t *testing.T) string {
 	t.Helper()
 
-	out := filepath.Join(t.TempDir(), "fabmcp")
+	name := "fabmcp"
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
+	out := filepath.Join(t.TempDir(), name)
 	cmd := exec.Command("go", "build", "-o", out, ourCmdImportPath)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
