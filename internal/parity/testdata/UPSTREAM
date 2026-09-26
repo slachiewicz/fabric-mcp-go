@@ -1,0 +1,3 @@
+# The upstream versions this port matches; scripts/sync-upstream.sh updates it.
+microsoft/mcp c1f933b4978945743fef2045537c1df36811da82
+Microsoft.DataFactory.MCP.Core 0.22.0-beta
