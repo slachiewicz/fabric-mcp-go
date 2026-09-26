@@ -70,7 +70,9 @@ jobs:
         if: always()
         with:
           name: sync-logs
-          path: ${{ runner.temp }}/sync/*.log
+          path: |
+            ${{ runner.temp }}/sync/*.log
+            ${{ runner.temp }}/sync/*.md
           if-no-files-found: ignore
       - name: Fail when a check failed
         if: steps.sync.outputs.status != '0'
