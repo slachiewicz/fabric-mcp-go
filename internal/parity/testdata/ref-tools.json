@@ -786,10 +786,6 @@
           "description": "The Dataverse environment domain URI (e.g. 'https://orgname.crm.dynamics.com').",
           "type": "string"
         },
-        "target-table-name": {
-          "description": "The Dataverse table name.",
-          "type": "string"
-        },
         "workspace-id": {
           "description": "The ID of the Microsoft Fabric workspace.",
           "type": "string"
