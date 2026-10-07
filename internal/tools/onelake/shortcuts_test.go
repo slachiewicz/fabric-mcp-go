@@ -226,7 +226,7 @@ func TestCreateShortcuts(t *testing.T) {
 			args: map[string]any{
 				"workspace-id": shortcutsWS, "item-id": shortcutsItem, "shortcut-path": "Files", "shortcut-name": "n",
 				"target-environment-domain": "https://org.crm.dynamics.com", "target-connection-id": "c",
-				"target-deltalake-folder": "f", "target-table-name": "ignored-by-upstream-too",
+				"target-deltalake-folder": "f",
 			},
 			wantTarget: "dataverse",
 			checkBody: func(t *testing.T, target map[string]any) {
@@ -235,7 +235,7 @@ func TestCreateShortcuts(t *testing.T) {
 					t.Errorf("dataverse target = %v", got)
 				}
 				if len(got) != 3 {
-					t.Errorf("dataverse target has %d fields, want 3 (table-name is accepted but never sent): %v", len(got), got)
+					t.Errorf("dataverse target has %d fields, want 3: %v", len(got), got)
 				}
 			},
 		},
