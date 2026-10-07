@@ -271,11 +271,6 @@ type createShortcutDataverseInput struct {
 	TargetEnvironmentDomain string `json:"target-environment-domain" jsonschema:"The Dataverse environment domain URI (e.g. 'https://orgname.crm.dynamics.com')."`
 	TargetConnectionID      string `json:"target-connection-id" jsonschema:"The connection ID (GUID) for authenticating to the target."`
 	TargetDeltalakeFolder   string `json:"target-deltalake-folder" jsonschema:"The Delta Lake folder path in Dataverse."`
-	// TargetTableName is accepted, matching upstream's schema, but never
-	// used to build the request: upstream's own ShortcutCreateDataverseOptions
-	// carries the identical unused option ("TODO (alzimmer): Option isn't
-	// used, command probably needs to be updated.").
-	TargetTableName string `json:"target-table-name,omitempty" jsonschema:"The Dataverse table name."`
 }
 
 func (a *Area) createShortcutDataverse(ctx context.Context, _ *mcp.CallToolRequest, in createShortcutDataverseInput) (*mcp.CallToolResult, any, error) {
