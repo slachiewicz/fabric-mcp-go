@@ -54,6 +54,7 @@ func run(args []string) error {
 	fs.Var(&tools, "tool", "expose only this tool; repeatable")
 	fs.BoolVar(&opts.ReadOnly, "read-only", false, "expose only read-only tools")
 	fs.BoolVar(&opts.DisableElicitation, "dangerously-disable-elicitation", false, "run destructive tools without asking the user for consent")
+	extensions := fs.Bool("extensions", false, "also expose the dataflow-ext tools, which upstream doesn't have")
 	debug := fs.Bool("debug", false, "debug logging to stderr")
 	if err := fs.Parse(args[2:]); err != nil {
 		return err
@@ -95,7 +96,11 @@ func run(args []string) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	s, err := server.New(ctx, opts, docs.New(), core.New(client), datafactory.New(client), onelake.New(cred))
+	areas := []server.Area{docs.New(), core.New(client), datafactory.New(client), onelake.New(cred)}
+	if *extensions {
+		areas = append(areas, datafactory.NewExt(client))
+	}
+	s, err := server.New(ctx, opts, areas...)
 	if err != nil {
 		return err
 	}

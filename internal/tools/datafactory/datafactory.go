@@ -341,20 +341,7 @@ func (a *Area) executeQuery(ctx context.Context, _ *mcp.CallToolRequest, in exec
 		return bad, nil, nil
 	}
 
-	wrapped := wrapForDataflowQuery(in.Query, in.QueryName)
-	req := dataflow.ExecuteQueryRequest{QueryName: &in.QueryName, CustomMashupDocument: &wrapped}
-	poller, err := a.dfQuery.BeginExecuteQuery(ctx, in.WorkspaceID, in.DataflowID, req, nil)
-	if err != nil {
-		return response.Error(err), nil, nil
-	}
-	// ExecuteQuery streams back an Apache Arrow payload, not JSON, so the
-	// SDK's typed poller.Result (which json.Unmarshals the final body) can't
-	// be used here; drive the poller manually and read the raw response.
-	raw, err := pollRaw(ctx, poller)
-	if err != nil {
-		return response.Error(err), nil, nil
-	}
-	body, err := runtime.Payload(raw)
+	body, err := runQuery(ctx, a.dfQuery, in.WorkspaceID, in.DataflowID, in.QueryName, wrapForDataflowQuery(in.Query, in.QueryName))
 	if err != nil {
 		return response.Error(err), nil, nil
 	}
@@ -367,6 +354,24 @@ func (a *Area) executeQuery(ctx context.Context, _ *mcp.CallToolRequest, in exec
 		"queryName":   in.QueryName,
 	})
 	return response.Success(map[string]any{"success": true, "data": data, "summary": summary}), nil, nil
+}
+
+// runQuery evaluates queryName in the mashup document doc against a
+// dataflow and returns the Arrow stream the service sends back.
+func runQuery(ctx context.Context, c *dataflow.QueryExecutionClient, workspaceID, dataflowID, queryName, doc string) ([]byte, error) {
+	req := dataflow.ExecuteQueryRequest{QueryName: &queryName, CustomMashupDocument: &doc}
+	poller, err := c.BeginExecuteQuery(ctx, workspaceID, dataflowID, req, nil)
+	if err != nil {
+		return nil, err
+	}
+	// ExecuteQuery streams back an Apache Arrow payload, not JSON, so the
+	// SDK's typed poller.Result (which json.Unmarshals the final body) can't
+	// be used here; drive the poller manually and read the raw response.
+	raw, err := pollRaw(ctx, poller)
+	if err != nil {
+		return nil, err
+	}
+	return runtime.Payload(raw)
 }
 
 // wrapForDataflowQuery ports upstream's MQueryExtensions.WrapForDataflowQuery:

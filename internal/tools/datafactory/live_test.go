@@ -137,7 +137,77 @@ func TestLiveDataflow(t *testing.T) {
 	}
 	client := liveClient(t)
 	cs := liveSession(t, context.Background(), client)
+	df := createLiveDataflow(t, client, cs, ws)
+	name := df["displayName"].(string)
 
+	// The result key shape the reference server returns for a created
+	// dataflow: id, displayName, description, type, workspaceId. Unlike
+	// list-dataflows, the create response never carries tags/properties.
+	var keys []string
+	for k := range df {
+		keys = append(keys, k)
+	}
+	slices.Sort(keys)
+	if got, want := jsonOf(keys), `["description","displayName","id","type","workspaceId"]`; got != want {
+		t.Errorf("dataflow keys = %s, want %s", got, want)
+	}
+	if df["type"] != "Dataflow" || df["workspaceId"] != ws || !strings.HasPrefix(name, "fabmcp_test_dataflow_") {
+		t.Errorf("unexpected dataflow %s", jsonOf(df))
+	}
+}
+
+// TestLiveDescribeTable runs describe-table on an inline #table against a
+// new dataflow in the reserved e2e workspace, then deletes the dataflow:
+//
+//	FABMCP_E2E_WORKSPACE=<id> go test -tags live ./internal/tools/datafactory/ -run LiveDescribeTable -v
+func TestLiveDescribeTable(t *testing.T) {
+	ws := os.Getenv("FABMCP_E2E_WORKSPACE")
+	if ws == "" {
+		t.Skip("FABMCP_E2E_WORKSPACE not set")
+	}
+	client := liveClient(t)
+	ctx := context.Background()
+	df := createLiveDataflow(t, client, liveSession(t, ctx, client), ws)
+
+	s, err := server.New(ctx, server.Options{Mode: server.ModeAll}, datafactory.NewExt(client))
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, ct := mcp.NewInMemoryTransports()
+	if _, err := s.Connect(ctx, st, nil); err != nil {
+		t.Fatal(err)
+	}
+	cs, err := mcp.NewClient(&mcp.Implementation{Name: "live"}, nil).Connect(ctx, ct, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = cs.Close() })
+
+	env, isErr := call(t, cs, "dataflow-ext_describe-table", map[string]any{
+		"workspace-id": ws, "dataflow-id": df["id"], "sample-size": 2,
+		"source": `#table(type table [id = Int64.Type, name = nullable text, day = date], ` +
+			`{{1, "a", #date(2026, 9, 26)}, {2, null, #date(2026, 10, 8)}, {3, "c", #date(2026, 10, 9)}})`,
+	})
+	if isErr {
+		t.Fatalf("describe-table failed: %s", jsonOf(env))
+	}
+	t.Logf("describe-table: %s", jsonOf(env["results"]))
+	results, _ := env["results"].(map[string]any)
+	if results["rowCount"] != float64(3) {
+		t.Errorf("rowCount = %v, want 3", results["rowCount"])
+	}
+	if cols, _ := results["columns"].([]any); len(cols) != 3 {
+		t.Errorf("columns = %s, want 3", jsonOf(results["columns"]))
+	}
+	if got, want := jsonOf(results["sample"]), `[{"day":"2026-09-26","id":1,"name":"a"},{"day":"2026-10-08","id":2,"name":null}]`; got != want {
+		t.Errorf("sample = %s\nwant %s", got, want)
+	}
+}
+
+// createLiveDataflow creates a dataflow with create-dataflow and registers
+// cleanup for it and for the staging items Fabric provisions with it.
+func createLiveDataflow(t *testing.T, client *fabric.Client, cs *mcp.ClientSession, ws string) map[string]any {
+	t.Helper()
 	// Creating a dataflow makes Fabric provision a staging Lakehouse and
 	// Warehouse, asynchronously, that deleting the dataflow leaves behind.
 	// Wait for the ones this test caused and remove them.
@@ -180,21 +250,7 @@ func TestLiveDataflow(t *testing.T) {
 			t.Errorf("cleanup: delete dataflow %s: %v", id, err)
 		}
 	})
-
-	// The result key shape the reference server returns for a created
-	// dataflow: id, displayName, description, type, workspaceId. Unlike
-	// list-dataflows, the create response never carries tags/properties.
-	var keys []string
-	for k := range df {
-		keys = append(keys, k)
-	}
-	slices.Sort(keys)
-	if got, want := jsonOf(keys), `["description","displayName","id","type","workspaceId"]`; got != want {
-		t.Errorf("dataflow keys = %s, want %s", got, want)
-	}
-	if df["displayName"] != name || df["type"] != "Dataflow" || df["workspaceId"] != ws {
-		t.Errorf("unexpected dataflow %s", jsonOf(df))
-	}
+	return df
 }
 
 // stagingItems returns the ID and name of the workspace's dataflow staging

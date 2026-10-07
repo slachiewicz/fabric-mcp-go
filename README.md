@@ -68,6 +68,9 @@ Clients that don't support elicitation can't run them unless you pass `--dangero
 | `--read-only` | Expose only read-only tools. |
 | `--transport http` | Serve streamable HTTP instead of stdio. |
 
+`--extensions` is this server's own option.
+It adds the `dataflow-ext` area, whose tools upstream doesn't have; see [Extensions](#extensions).
+
 ### HTTP transport
 
 Over HTTP the server authenticates callers against an Entra ID application.
@@ -87,6 +90,15 @@ These are deliberate:
 - `datafactory_execute-query` polls the query as a long-running operation; upstream reads only the first response.
 - There's no telemetry.
 - `--mode consolidated` exposes no tools, as upstream does for Fabric.
+
+## Extensions
+
+Pass `--extensions` to add tools that upstream doesn't have.
+They're in their own `dataflow-ext` area, so without the option the tool list matches upstream's exactly.
+
+| Tool | What it does |
+|---|---|
+| `dataflow-ext_describe-table` | Takes an M expression that evaluates to a table and returns its columns with Power Query types and nullability, its row count and its first rows, in one call. The expression runs with the dataflow's connections. `sample-size` (0 to 100, default 5) and `include-row-count` (default true) trim the work. |
 
 ## Development
 

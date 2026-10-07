@@ -33,6 +33,13 @@ func (staticCred) GetToken(context.Context, policy.TokenRequestOptions) (azcore.
 // session starts the datafactory area against a fake Fabric API served by h.
 func session(t *testing.T, h http.HandlerFunc) *mcp.ClientSession {
 	t.Helper()
+	return sessionWith(t, h, func(c *fabric.Client) server.Area { return datafactory.New(c) })
+}
+
+// sessionWith starts the area newArea returns against a fake Fabric API
+// served by h.
+func sessionWith(t *testing.T, h http.HandlerFunc, newArea func(*fabric.Client) server.Area) *mcp.ClientSession {
+	t.Helper()
 	api := httptest.NewTLSServer(h)
 	t.Cleanup(api.Close)
 	endpoint := api.URL
@@ -42,7 +49,7 @@ func session(t *testing.T, h http.HandlerFunc) *mcp.ClientSession {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := server.New(context.Background(), server.Options{Mode: server.ModeAll}, datafactory.New(client))
+	s, err := server.New(context.Background(), server.Options{Mode: server.ModeAll}, newArea(client))
 	if err != nil {
 		t.Fatal(err)
 	}
