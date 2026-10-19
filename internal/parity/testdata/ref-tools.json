@@ -1,6 +1,38 @@
 [
   {
     "_meta": {
+      "MicrosoftMcpToolId": "b4b202a4-5a61-4a4c-833e-e9707d604ebe"
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Assign Fabric Workspace to Capacity"
+    },
+    "description": "Submit a request to assign an existing Microsoft Fabric workspace to a target capacity.\nRequires workspace-id and capacity-id as nonempty GUIDs, workspace Admin and capacity\nContributor or Admin permissions, and Capacity.ReadWrite.All and Workspace.ReadWrite.All scopes.\nReturns 202 Accepted with the requested workspace and capacity IDs, accepted=true, and\nstate=Pending. Acceptance does not confirm completion. Does not poll, retry, create workspaces,\nor provision or resize capacities. Inspect the workspace separately to check assignment progress.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "capacity-id": {
+          "description": "The ID of the target capacity, as a nonempty GUID.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the existing Microsoft Fabric workspace, as a nonempty GUID.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "capacity-id"
+      ],
+      "type": "object"
+    },
+    "name": "core_assign-workspace-to-capacity"
+  },
+  {
+    "_meta": {
       "MicrosoftMcpToolId": "bfdfd3c0-4551-4454-a930-5bf5b1ad5690"
     },
     "annotations": {
@@ -10,28 +42,40 @@
       "readOnlyHint": false,
       "title": "Create Fabric Item"
     },
-    "description": "Creates a new item in a Fabric workspace. Use this when the user wants to create a Lakehouse, Notebook, or other Fabric item type. Requires workspace ID, item name, and item type.",
+    "description": "Creates a Fabric item using a nonempty workspace UUID, display-name, and item-type.\nSupply workspace-id or the backward-compatible workspace UUID alias; workspace names are not resolved.\nSends one creation request. A 201 response returns item metadata; 202 returns a resumable operation receipt.\nWith sync=true, asynchronously wait up to max-wait-seconds (default 120, server maximum 600 seconds)\nafter acceptance and retrieve the result if available. Both modes immediately return synchronous completion without polling.\nearly-poll=true permits one probe after at most 3 seconds instead of the initial 202 Retry-After;\nfalse honors that hint. Later polls and 429/503 retries honor validated hints.\nWait expiry returns last-known state, not a failed mutation; client cancellation can stop waiting sooner.\nDescription is limited to 256 characters; naming rules depend on item type.\nRequires Contributor or higher workspace access and, for delegated callers, Item.ReadWrite.All or\nthe item-specific ReadWrite.All scope. Non-Power BI items require a supported Fabric capacity and\ntenant/capacity settings that enable Fabric item creation; Power BI items require the appropriate license.\nService-principal and managed-identity support depends on item type.\nDoes not supply definitions or creation payloads, cancel Fabric operations, or resubmit creation.\nOnly JSON/empty operation responses up to 1 MiB are supported; created item metadata is required.\nAcceptance is not completion. Resume using get-operation-state and get-operation-result, not another create.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
         "description": {
-          "description": "The description for the item.",
+          "description": "The description for the item, at most 256 characters.",
           "type": "string"
         },
         "display-name": {
-          "description": "The display name for the item.",
+          "description": "The display name for the item, following the naming rules for its item type.",
           "type": "string"
+        },
+        "early-poll": {
+          "description": "Allow one early status probe after at most 3 seconds, even if the initial 202 Retry-After is longer. Defaults to true; false honors the initial hint. Later polls and 429/503 retries honor validated hints.",
+          "type": "boolean"
         },
         "item-type": {
           "description": "The type of the Fabric item (e.g., Lakehouse, Notebook, etc.).",
           "type": "string"
         },
+        "max-wait-seconds": {
+          "description": "Finite positive local wait budget in seconds after an accepted response when sync is true. Defaults to 120; the server rejects values above 600 (10 minutes), without clamping. Fractional seconds are allowed. Expiry returns a resumable receipt and does not cancel Fabric's operation.",
+          "type": "number"
+        },
+        "sync": {
+          "description": "Wait asynchronously for accepted creation to complete. Defaults to false, returning an operation receipt without polling.",
+          "type": "boolean"
+        },
         "workspace": {
-          "description": "The name or ID of the Microsoft Fabric workspace.",
+          "description": "Backward-compatible alias for the workspace UUID, used when workspace-id is omitted or blank. Workspace names are not supported.",
           "type": "string"
         },
         "workspace-id": {
-          "description": "The ID of the Microsoft Fabric workspace.",
+          "description": "The nonempty UUID of the Microsoft Fabric workspace. Workspace names are not resolved. Takes precedence over workspace unless omitted, empty, or whitespace.",
           "type": "string"
         }
       },
@@ -45,6 +89,363 @@
   },
   {
     "_meta": {
+      "MicrosoftMcpToolId": "26e554fc-d05b-4e71-af64-12186c262080"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Create Fabric Workspace"
+    },
+    "description": "Creates a new Microsoft Fabric workspace with a required display name and optional description.\nOptionally assign an existing capacity and domain by UUID in the same creation request.\nReturns the created workspace's management metadata and the Location header when supplied.\nRequires Fabric workspace-creation permission, capacity contributor/admin access when assigning a capacity,\nand domain assignment permission when assigning a domain; delegated callers need Workspace.ReadWrite.All.\nDoes not provision capacities or domains, resolve names, create items, or poll capacity assignment.\nCreation is not idempotent and is never automatically retried. If the outcome is uncertain,\ncheck whether the workspace was created before making another creation request.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "capacity-id": {
+          "description": "The nonempty UUID of an existing capacity to assign during workspace creation. Requires capacity contributor or admin permission. Does not create a capacity or perform a separate assignment operation.",
+          "type": "string"
+        },
+        "description": {
+          "description": "The workspace description, at most 4000 characters. Omit to use the service default.",
+          "type": "string"
+        },
+        "display-name": {
+          "description": "The display name of the new Microsoft Fabric workspace. Required, not empty or whitespace, and at most 256 characters. Only unused names are allowed; 'Admin monitoring' is reserved.",
+          "type": "string"
+        },
+        "domain-id": {
+          "description": "The nonempty UUID of an existing domain to assign during workspace creation. Requires permission to assign the workspace to that domain. Does not create or look up a domain.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "display-name"
+      ],
+      "type": "object"
+    },
+    "name": "core_create-workspace"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "fc3e35e8-bdf8-4080-919e-94372f4e656a"
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Delete Fabric Item"
+    },
+    "description": "Deletes one Microsoft Fabric item using its required workspace UUID and item UUID.\nOmit hard-delete or explicitly pass false to use Fabric's default deletion behavior:\nsoft deletion only for supported item types, without a guarantee of recovery.\nExplicitly pass hard-delete true to permanently delete the item; permanent deletion cannot be recovered.\nSoft deletion requires item write permission, and permanent deletion requires workspace Admin.\nDelegated callers need Item.ReadWrite.All or the item-specific write scope.\nReturns only the requested workspace ID, item ID, and hard-delete mode after a successful response.\nDoes not resolve names, infer item type, retry, or fall back to permanent deletion.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "hard-delete": {
+          "description": "Explicitly pass true to permanently delete the item; this cannot be recovered and requires workspace Admin. Omit or pass false to use Fabric's default deletion behavior, which soft-deletes only supported item types and does not guarantee recovery. When supplied, this option requires an explicit true or false value.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "item-id": {
+          "description": "The ID of the Microsoft Fabric item to delete. Must be a nonempty UUID.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace containing the item. Must be a nonempty UUID.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id"
+      ],
+      "type": "object"
+    },
+    "name": "core_delete-item"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "694e4ea4-b867-4fb8-a7bb-0a873d2f6179"
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Delete Fabric Workspace"
+    },
+    "description": "Deletes one Microsoft Fabric workspace AND the items under it. This is a destructive operation.\nRequires the explicit workspace UUID; workspace names and automatic target selection are not supported.\nThe caller must have the Admin workspace role; delegated callers also need Workspace.ReadWrite.All.\nReturns the targeted workspace ID and a deletion acknowledgement only after Fabric reports successful completion.\nDoes not enumerate or individually delete items, retry automatically, or poll.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace to delete. Must be a nonempty UUID. Deleting this workspace also deletes the items under it.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id"
+      ],
+      "type": "object"
+    },
+    "name": "core_delete-workspace"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "b7c574c4-4213-4dc0-95a7-435dc33ed306"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get Fabric Capacity"
+    },
+    "description": "Gets metadata for one existing Microsoft Fabric capacity using its required capacity UUID.\nUse this to inspect a known capacity's ID, display name, SKU, region, and state.\nRequires Administrator or Contributor permission on the capacity.\nDoes not list capacities, read billing or item data, modify resources, assign workspaces,\nor poll long-running operations.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "capacity-id": {
+          "description": "The ID of the Microsoft Fabric capacity to retrieve. Must be a nonempty UUID.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "capacity-id"
+      ],
+      "type": "object"
+    },
+    "name": "core_get-capacity"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "65e8b362-6e77-44a0-bae2-9e1f7cde3515"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get Fabric Item"
+    },
+    "description": "Gets metadata for one existing Microsoft Fabric item, such as a Lakehouse, Notebook, or Report.\nUse this to inspect an item when its workspace ID and item ID are known. Both IDs are required UUIDs.\nReturns the item ID, display name, description when available, type, and workspace ID.\nDoes not return item data, definitions, or workload-specific properties, and does not modify the item.\nUse search-catalog to discover items when their IDs are unknown.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "item-id": {
+          "description": "The ID of the Microsoft Fabric item to retrieve. Must be a nonempty UUID.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace containing the item. Must be a nonempty UUID.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id"
+      ],
+      "type": "object"
+    },
+    "name": "core_get-item"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "4e4b0f52-b2dd-4f2a-9cd4-62a2b36ec8ca"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get Fabric Operation Result"
+    },
+    "description": "Reads the result of one completed Fabric long-running operation by operation-id UUID in a single request.\nReturns a JSON envelope with operationId, hasBody, and value; JSON null differs from an empty body.\nOnly JSON and empty results are supported, up to 1 MiB (1,048,576 bytes). Binary results are unsupported.\nUse get-operation-state first to confirm Succeeded. Not every initiating API produces a result;\na missing result or HTTP 404 does not establish successful no-result completion.\nRequires the same identity, resource permissions, and delegated scopes as the initiating API.\nDoes not poll, retry, follow response URLs, download binary data, or resubmit the original mutation.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "operation-id": {
+          "description": "The nonempty operation UUID returned by the initiating Fabric API. URLs and resource names are not accepted.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation-id"
+      ],
+      "type": "object"
+    },
+    "name": "core_get-operation-result"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a5207176-a6ac-4bc9-b588-d00a68b675d8"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get Fabric Operation State"
+    },
+    "description": "Reads the state of one Fabric long-running operation by operation-id UUID in a single request.\nReturns the status, optional progress/timestamps, safe failure code/request ID, and polling guidance.\nA successful state read can report a Failed operation; unknown future statuses are not completion.\nAfter Succeeded, use get-operation-result only if the initiating API produces a result.\nRequires the same identity, resource permissions, and delegated scopes as the initiating API.\nDoes not poll, retry, cancel operations, follow response URLs, or resubmit the original mutation.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "operation-id": {
+          "description": "The nonempty operation UUID returned by the initiating Fabric API. URLs and resource names are not accepted.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation-id"
+      ],
+      "type": "object"
+    },
+    "name": "core_get-operation-state"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "d331817d-fbda-49dc-97b6-c3d6bed8d125"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get Fabric Workspace"
+    },
+    "description": "Gets metadata for one existing Microsoft Fabric workspace using its required workspace UUID.\nUse this to inspect a known workspace's ID, display name, type, description, capacity, domain,\nworkspace identity identifiers, and applied tags when available.\nOptionally request workspace-specific API and OneLake endpoints; returned endpoints are metadata only.\nDoes not list workspaces or items, read item data or definitions, modify resources, or poll capacity assignments.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "prefer-workspace-specific-endpoints": {
+          "description": "Whether to request workspace-specific API and OneLake endpoints. Omit to preserve the service default. Returned endpoints are metadata only and are not contacted by this tool.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "workspace-id": {
+          "description": "The ID of the Microsoft Fabric workspace to retrieve. Must be a nonempty UUID.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id"
+      ],
+      "type": "object"
+    },
+    "name": "core_get-workspace"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "4ea4af95-1947-423b-bec6-a0357380485e"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List Fabric Capacities"
+    },
+    "description": "Lists one page of Microsoft Fabric capacities where the calling principal is an administrator or contributor.\nUse this to discover accessible capacity IDs, display names, SKUs, regions, and states.\nReturns capacity metadata and available continuationToken and continuationUri values.\nTo request another page, pass the returned continuation token unchanged; omit it for the first page.\nSupports users, service principals, and managed identities. Delegated calls require Capacity.Read.All or Capacity.ReadWrite.All.\nThis is the Fabric Core API, not an Azure subscription inventory or a capacity utilization report.\nDoes not automatically retrieve additional pages, follow returned URIs, or modify capacities.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "continuation-token": {
+          "description": "The continuation token returned by a previous capacity listing. Pass it unchanged to retrieve the next page, or omit it for the first page.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "core_list-capacities"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "a5c36b36-be01-4f78-8c4e-f714e8d87883"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List Fabric Items"
+    },
+    "description": "Lists one page of Microsoft Fabric item metadata in a known workspace, optionally filtered by item type or root folder.\nRequires a workspace UUID. Use this for a workspace or folder inventory of Lakehouses, Notebooks, Reports, and other Fabric items.\nIncludes nested folders by default; set recursive to false for direct items only.\nReturns item IDs, names, types, workspace and folder IDs, other inventory metadata, and available continuation information.\nTo retrieve another page, pass the returned continuation token with the same filters.\nThis is the Fabric Core metadata API, not OneLake file/blob listing or cross-workspace catalog search.\nDoes not read item data, definitions, or default identities, and does not modify resources.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "continuation-token": {
+          "description": "The continuation token returned by a previous page, copied unchanged. Keep the same workspace, type, root folder, and recursive options. Omit for the first page.",
+          "type": "string"
+        },
+        "recursive": {
+          "description": "Include items in nested folders. Defaults to true; false lists only direct items in the workspace root or specified root folder.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "root-folder-id": {
+          "description": "The root folder ID to list within. Must be a nonempty UUID. Omit to use the workspace root.",
+          "type": "string"
+        },
+        "type": {
+          "description": "Filter by Fabric item type, such as Lakehouse, Notebook, or Report. Omit to include all types.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The Microsoft Fabric workspace ID. Must be a nonempty UUID.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id"
+      ],
+      "type": "object"
+    },
+    "name": "core_list-items"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "8f20d389-e5e1-4dcf-84b8-6702957fc408"
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List Fabric Workspaces"
+    },
+    "description": "Lists one page of Microsoft Fabric workspaces accessible to the calling principal using the Core REST management API.\nUse this to discover workspace IDs and inspect workspace management metadata, optionally filtering by workspace role:\nAdmin, Member, Contributor, or Viewer. Returns IDs, display names, types, available descriptions, capacity/domain details,\ntags, and continuation information. Optionally request workspace-specific API endpoints.\nPass the continuation token with the same filters to get another page.\nUnlike onelake_list-workspaces, this is management metadata, not a OneLake storage/data-plane listing.\nIt does not search catalog items, read item data or definitions, or modify resources.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "continuation-token": {
+          "description": "The continuation token returned by the preceding page. Pass it unchanged and repeat the same roles and endpoint preference to retrieve the next page. Omit for the first page.",
+          "type": "string"
+        },
+        "prefer-workspace-specific-endpoints": {
+          "description": "Whether to request workspace-specific API endpoints in the returned metadata. Omit to use the API default. This does not change the endpoint used to list workspaces.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "roles": {
+          "description": "Filter by the calling principal's workspace roles: Admin, Member, Contributor, or Viewer, separated by commas. Role names are case-insensitive. Omit to list workspaces without a role filter.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": "core_list-workspaces"
+  },
+  {
+    "_meta": {
       "MicrosoftMcpToolId": "3b8bc9c0-b833-4a61-9278-d58e366a70d7"
     },
     "annotations": {
@@ -54,16 +455,16 @@
       "readOnlyHint": true,
       "title": "Search Catalog"
     },
-    "description": "Searches the Microsoft Fabric OneLake catalog for items matching the specified criteria. Supports cross-workspace search over catalog metadata and returns results filtered to entries the calling principal is authorized to access. Use this when the user wants to discover or find Fabric items (Lakehouse, Report, Notebook, and other item types) across workspaces by name, description, or workspace name. Optionally filter by item type.",
+    "description": "Searches one page of Microsoft Fabric OneLake catalog metadata across workspaces, limited to entries\nthe calling principal can access. Find Fabric items by name, description, or workspace name, optionally\nfiltering by item type. Returns typed entries with available workspace hierarchy and a continuation token.\nFor the next page, send the returned continuation-token without search or filter: the token already\ncarries the original search, filter, and page size. An explicitly supplied page-size must be 1 through 1000.\nDoes not fetch all pages, read item data, or retry automatically. Delegated callers need Catalog.Read.All.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
         "continuation-token": {
-          "description": "A token for retrieving the next page of results.",
+          "description": "The unchanged token returned by the previous page. Carries the original search, filter, and page size; may be sent alone and must not accompany search or filter.",
           "type": "string"
         },
         "filter": {
-          "description": "The filter for the search. Supports filtering by type of entries. Supported operators: eq (Equals), ne (Not Equals), or (Logical OR), () (Parentheses for grouping). Example: \"Type eq 'Report' or Type eq 'Lakehouse'\". Supported item types include Report, Lakehouse, Notebook, Warehouse, SemanticModel, KQLDatabase, and DataPipeline; for the full list see the Catalog Search API reference at https://learn.microsoft.com/rest/api/fabric/core/catalog/search.",
+          "description": "The filter for the search. Supports filtering by type of entries. Supported operators: eq (Equals), ne (Not Equals), or (Logical OR), () (Parentheses for grouping). Example: \"Type eq 'Report' or Type eq 'Lakehouse'\". Supported item types include Report, Lakehouse, Notebook, Warehouse, SemanticModel, KQLDatabase, and DataPipeline; for the full list see the Catalog Search API reference at https://learn.microsoft.com/rest/api/fabric/core/catalog/search. Omit when using continuation-token.",
           "type": "string"
         },
         "page-size": {
@@ -74,13 +475,88 @@
           ]
         },
         "search": {
-          "description": "The text query for the search. Supports searching across display name, description and workspace name of the catalog entry.",
+          "description": "The text query for the search. Supports searching across display name, description and workspace name of the catalog entry. Omit when using continuation-token.",
           "type": "string"
         }
       },
       "type": "object"
     },
     "name": "core_search-catalog"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "47a1843f-948a-4778-aeaf-803046e7cc45"
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Update Fabric Item"
+    },
+    "description": "Updates an existing Fabric item's display name or description and returns its metadata.\nRequires workspace-id and item-id UUIDs and at least one of display-name or description.\nOmitted properties remain unchanged; an empty description clears it. Descriptions allow at most 256 characters;\ndisplay-name rules depend on item type. Does not change item definitions, data, permissions, tags, or identity.\nRequires read and write permission on the item. Delegated callers need Item.ReadWrite.All or the corresponding\nitem-specific scope; service-principal and managed-identity support depends on item type.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "description": "The new item description, at most 256 characters. An empty string clears the description; omit to keep it unchanged.",
+          "type": "string"
+        },
+        "display-name": {
+          "description": "The new item display name. Must follow the naming rules for the item's type. Omit to keep the current name.",
+          "type": "string"
+        },
+        "item-id": {
+          "description": "The nonempty UUID of the Microsoft Fabric item to update.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The nonempty UUID of the Microsoft Fabric workspace containing the item.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id",
+        "item-id"
+      ],
+      "type": "object"
+    },
+    "name": "core_update-item"
+  },
+  {
+    "_meta": {
+      "MicrosoftMcpToolId": "aaed882f-746f-472c-b50f-b401f8994cb7"
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Update Fabric Workspace"
+    },
+    "description": "Updates or renames an existing Microsoft Fabric workspace using its required workspace UUID.\nSupply a new display name, a new description, or both. Omitted properties remain unchanged;\nan empty description clears it. Display names are limited to 256 characters and descriptions\nto 4000 characters. Workspace names must be unique within the tenant; Admin monitoring is reserved.\nReturns the workspace ID, display name, type, and description when available.\nRequires the workspace Admin role and, for delegated callers, Workspace.ReadWrite.All.\nDoes not change capacity, domain, identity, permissions, tags, endpoints, items, or data.\nDoes not resolve names, fetch additional metadata, poll, or retry automatically.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "description": "The new workspace description, up to 4000 characters. An empty string clears the description; omit to leave unchanged.",
+          "type": "string"
+        },
+        "display-name": {
+          "description": "The new workspace display name, up to 256 characters. Must not be empty or whitespace-only and must be unique within the tenant. Admin monitoring is reserved. Omit to leave unchanged.",
+          "type": "string"
+        },
+        "workspace-id": {
+          "description": "The Microsoft Fabric workspace ID. Must be a nonempty UUID; workspace names are not accepted.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace-id"
+      ],
+      "type": "object"
+    },
+    "name": "core_update-workspace"
   },
   {
     "_meta": {
