@@ -4,10 +4,11 @@
 #
 # It updates internal/tools/docs/resources, internal/parity/testdata/ref-tools.json
 # and internal/parity/testdata/UPSTREAM, and writes a Markdown report of what
-# changed upstream and how the checks went to $WORK/report.md. It exits 0 when
-# upstream hasn't moved or every check passed, 1 when a check failed.
+# changed upstream and how the checks went to $WORK/report.md. A failed check
+# goes into the report, not the exit status: it exits non-zero only when the
+# sync itself fails.
 #
-# Needs git, rsync, Go and the .NET 10 SDK. Environment:
+# Needs git, rsync, jq, Go and the .NET 10 SDK. Environment:
 #   WORK          scratch directory (default: a new temporary directory)
 #   UPSTREAM_DIR  an existing microsoft/mcp checkout to update instead of cloning
 #   FORCE=1       run even when upstream hasn't moved
@@ -54,13 +55,14 @@ microsoft/mcp $new_sha
 Microsoft.DataFactory.MCP.Core $new_df
 EOF
 
-# Areas upstream has that this port doesn't.
+# Tool namespaces upstream has that this port doesn't. Compared by tool name
+# prefix, not by upstream project: a project can hold several namespaces, as
+# Fabric.Mcp.Tools.Core holds both core and jobs.
 new_areas=$(comm -13 \
-  <(printf '%s\n' Core DataFactory Docs OneLake) \
-  <(ls "$upstream/tools" | sed -n 's/^Fabric\.Mcp\.Tools\.//p' | sort))
+  <(grep -rhoE 'Name\(\) string \{ return "[a-z-]+" \}' "$root/internal/tools" | sed -E 's/.*"([a-z-]+)".*/\1/' | sort -u) \
+  <(jq -r '.[].name | split("_")[0]' "$root/internal/parity/testdata/ref-tools.json" | sort -u))
 
 # check NAME CMD... runs a gate and records its outcome.
-status=0
 results=
 check() {
   local name=$1
@@ -69,7 +71,6 @@ check() {
     results+="| $name | pass |"$'\n'
   else
     results+="| $name | **fail** |"$'\n'
-    status=1
   fi
 }
 check unit env -u FABMCP_REF go test -count=1 ./...
@@ -132,4 +133,3 @@ check docs-calls go test -count=1 ./internal/parity/ -run TestParityCalls -parit
 } >"$report"
 
 echo "report: $report"
-exit $status
