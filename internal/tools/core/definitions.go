@@ -1126,3 +1126,23 @@ func parseJSONObject(s *string, option string, max int) (json.RawMessage, error)
 	_ = json.Compact(&compact, b)
 	return compact.Bytes(), nil
 }
+
+// parseJSONArray ports FabricItemJsonInput.ParseArray.
+func parseJSONArray(s *string, option string, max int) (json.RawMessage, error) {
+	if s == nil {
+		return nil, nil
+	}
+	if utf16Len(*s) > max || len(*s) > max {
+		return nil, itemInputError(fmt.Sprintf("%s must not exceed %d UTF-8 bytes.", option, max))
+	}
+	b := []byte(*s)
+	if !utf8.Valid(b) || !json.Valid(b) || !depthOK(b, 32) || noDuplicateKeys(b) != nil {
+		return nil, itemInputError(fmt.Sprintf("%s must contain valid JSON with no duplicate properties and at most 32 nesting levels.", option))
+	}
+	if !bytes.HasPrefix(bytes.TrimSpace(b), []byte("[")) {
+		return nil, itemInputError(option + " must be a JSON array, not null, an object, or a scalar.")
+	}
+	var compact bytes.Buffer
+	_ = json.Compact(&compact, b)
+	return compact.Bytes(), nil
+}
