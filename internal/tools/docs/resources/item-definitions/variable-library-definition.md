@@ -1,4 +1,3 @@
-  
 # Variable library definition
   
 This article provides a breakdown of the definition structure for variable library items.

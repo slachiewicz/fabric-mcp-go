@@ -10,8 +10,7 @@
         "retentionDays": 10,
         "auditActionsAndGroups": [
           "SUCCESSFUL_DATABASE_AUTHENTICATION_GROUP"
-        ],
-        "predicateExpression": "NOT statement LIKE 'SELECT %'"
+        ]
       }
     }
   }

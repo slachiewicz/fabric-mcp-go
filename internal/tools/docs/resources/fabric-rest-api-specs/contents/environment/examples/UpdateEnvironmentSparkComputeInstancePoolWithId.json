@@ -15,8 +15,7 @@
                 "instancePool": {
                     "name": "MyWorkspacePool",
                     "type": "Workspace",
-                    "id": "78942136-106c-4f3e-80fc-7ff4eae11603",
-                    "maxClustersToHydrateLimit": 10
+                    "id": "78942136-106c-4f3e-80fc-7ff4eae11603"
                 },
                 "driverCores": 4,
                 "driverMemory": "56g",
