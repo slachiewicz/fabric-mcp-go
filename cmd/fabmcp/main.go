@@ -96,7 +96,7 @@ func run(args []string) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	areas := []server.Area{docs.New(), core.New(client, core.WithLocalFiles(*transport == "stdio")), datafactory.New(client), onelake.New(cred)}
+	areas := []server.Area{docs.New(), core.New(client, core.WithLocalFiles(*transport == "stdio")), core.NewJobs(client), datafactory.New(client), onelake.New(cred)}
 	if *extensions {
 		areas = append(areas, datafactory.NewExt(client))
 	}

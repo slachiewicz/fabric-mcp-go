@@ -42,7 +42,7 @@ func session(t *testing.T, cred azcore.TokenCredential, h http.HandlerFunc) *mcp
 	// This suite exercises the core_* tools directly, so it asks for mode
 	// "all" explicitly rather than relying on the default (now "namespace",
 	// which would collapse them into one "core" proxy tool).
-	s, err := server.New(ctx, server.Options{Mode: server.ModeAll, DisableElicitation: true}, core.New(client))
+	s, err := server.New(ctx, server.Options{Mode: server.ModeAll, DisableElicitation: true}, core.New(client), core.NewJobs(client))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,15 +1,16 @@
 # fabric-mcp-go
 
 A Go implementation of the [Microsoft Fabric MCP Server](https://github.com/microsoft/mcp/tree/main/servers/Fabric.Mcp.Server).
-It exposes the same 48 tools with the same names, parameters and result format as upstream `main`, so an existing `mcp.json` entry can point at this binary instead.
+It exposes the same 85 tools with the same names, parameters and result format as upstream `main`, so an existing `mcp.json` entry can point at this binary instead.
 It ships as a single static binary with no .NET runtime.
 
-The tools are grouped in four areas:
+The tools are grouped in five areas:
 
 | Area | Tools | What they do |
 |---|---|---|
 | `docs` | 6 | Fabric OpenAPI specs, item definitions, best practices and API examples, embedded in the binary. No sign-in needed. |
-| `core` | 2 | Search the OneLake catalog and create items. |
+| `core` | 30 | Search the OneLake catalog; manage capacities, workspaces, role assignments, folders, items and item definitions; track long-running operations. |
+| `jobs` | 9 | Run, read, list and cancel item jobs; manage job schedules. |
 | `datafactory` | 7 | Pipelines, Dataflow Gen2 and M (Power Query) query execution. |
 | `onelake` | 33 | Workspaces and items, files and directories, the Table API, data access roles, shortcuts and settings. |
 
