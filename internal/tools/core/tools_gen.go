@@ -3,7 +3,11 @@ package core
 // Code generated from internal/parity/testdata/ref-tools.json; descriptions
 // and annotations must match upstream verbatim. Edit by regenerating.
 
-import "github.com/modelcontextprotocol/go-sdk/mcp"
+import (
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/slachiewicz/fabric-mcp-go/internal/server"
+)
 
 type listWorkspacesInput struct {
 	ContinuationToken                *string `json:"continuation-token,omitempty" jsonschema:"The continuation token returned by the preceding page. Pass it unchanged and repeat the same roles and endpoint preference to retrieve the next page. Omit for the first page."`
@@ -489,6 +493,177 @@ func getOperationResultTool() *mcp.Tool {
 		Annotations: &mcp.ToolAnnotations{
 			Title: "Get Fabric Operation Result", ReadOnlyHint: true, IdempotentHint: true,
 			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type createItemInput struct {
+	DisplayName              string   `json:"display-name" jsonschema:"The display name for the item, following the naming rules for its item type."`
+	ItemType                 string   `json:"item-type" jsonschema:"The type of the Fabric item (e.g., Lakehouse, Notebook, etc.)."`
+	CreationPayload          *string  `json:"creation-payload,omitempty" jsonschema:"Item-specific creation properties as a JSON object string, up to 1 MiB (1048576 UTF-8 bytes) and 32 nesting levels. Mutually exclusive with every inline or saved-file definition option. Fabric validates supported properties for the item type. Not a path or a complete create-request body."`
+	Definition               *string  `json:"definition,omitempty" jsonschema:"Inline definition JSON as a string: {\"parts\":[{\"path\":\"logical/path\",\"payload\":\"base64\",\"payloadType\":\"InlineBase64\"}],\"format\":\"optional format\"}. Supported in local and HTTP modes. Mutually exclusive with every definition-directory/files/format option. Supply only the definition envelope, not a file path or an API request body."`
+	DefinitionDirectory      *string  `json:"definition-directory,omitempty" jsonschema:"Existing absolute local item directory containing saved definition files. Local execution only; unavailable over HTTP. Requires definition-files; never scans the folder automatically. Mutually exclusive with inline definition."`
+	DefinitionFiles          *string  `json:"definition-files,omitempty" jsonschema:"Explicit file selection as a JSON array string: [{\"partPath\":\"artifact.content.ipynb\",\"sourcePath\":\"sales.ipynb\"}]. Paths are relative to definition-directory; sourcePath defaults to partPath. Logical part paths use '/'. No wildcards or automatic enumeration. Local execution only."`
+	DefinitionFormat         *string  `json:"definition-format,omitempty" jsonschema:"Optional Fabric definition format for saved-file input only, for example ipynb, FabricGitSource, TMDL, TMSL, PBIR, or PBIR-Legacy. Requires definition-directory and definition-files. For inline input, put format inside definition JSON. Format and content are forwarded unchanged after generic validation; Fabric validates format support and item-specific layouts."`
+	Description              *string  `json:"description,omitempty" jsonschema:"The description for the item, at most 256 characters."`
+	EarlyPoll                *bool    `json:"early-poll,omitempty" jsonschema:"Allow one early status probe after at most 3 seconds, even if the initial 202 Retry-After is longer. Defaults to true; false honors the initial hint. Later polls and 429/503 retries honor validated hints."`
+	FolderID                 *string  `json:"folder-id,omitempty" jsonschema:"Optional nonempty UUID of an existing Fabric folder in the workspace. Passed directly without looking up or creating folders. Omit to use the workspace root."`
+	MaxWaitSeconds           *float64 `json:"max-wait-seconds,omitempty" jsonschema:"Finite positive local wait budget in seconds after an accepted response when sync is true. Defaults to 120; the server rejects values above 600 (10 minutes), without clamping. Fractional seconds are allowed. Expiry returns a resumable receipt and does not cancel Fabric's operation."`
+	Options                  *string  `json:"options,omitempty" jsonschema:"The API's top-level item-specific options as a JSON object string, up to 1 MiB (1048576 UTF-8 bytes) and 32 nesting levels. Requires an inline or saved-file definition source. Consult the item's Update Definition API for supported options. These are not LRO wait settings; use sync, max-wait-seconds, and early-poll for waiting."`
+	SensitivityLabelSettings *string  `json:"sensitivity-label-settings,omitempty" jsonschema:"Optional label settings as a JSON object string, up to 4096 UTF-8 bytes: {\"labelId\":\"nonempty UUID\",\"sensitivityLabelApplyStrategy\":\"ApplyOrFail\"}. When supplied, labelId is required and must be a nonempty UUID; the strategy is optional and stays omitted when not supplied. A supplied strategy must be ApplyOrFail or Ignore. Fabric defaults an omitted strategy to ApplyOrFail. Ignore explicitly permits creation without the label if it cannot be applied; the tool never downgrades policy or retries without it."`
+	Sync                     *bool    `json:"sync,omitempty" jsonschema:"Wait asynchronously for accepted creation to complete. Defaults to false, returning an operation receipt without polling."`
+	Workspace                *string  `json:"workspace,omitempty" jsonschema:"Backward-compatible alias for the workspace UUID, used when workspace-id is omitted or blank. Workspace names are not supported."`
+	WorkspaceID              *string  `json:"workspace-id,omitempty" jsonschema:"The nonempty UUID of the Microsoft Fabric workspace. Workspace names are not resolved. Takes precedence over workspace unless omitted, empty, or whitespace."`
+}
+
+func createItemTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "create-item",
+		Description: "Creates a Fabric item using a nonempty workspace UUID, display-name, and item-type.\n" +
+			"Supply workspace-id or the backward-compatible workspace UUID alias; workspace names are not resolved.\n" +
+			"Optional folder-id is an existing folder UUID, passed without lookup or folder creation.\n" +
+			"Supply bounded item-specific creation-payload JSON or a definition, never both.\n" +
+			"Optionally supply inline definition JSON, or in local execution a definition-directory and explicit\n" +
+			"definition-files mapping with optional definition-format. Never combine these sources.\n" +
+			"File input reads saved, explicitly selected files only; HTTP callers must supply inline content.\n" +
+			"Definitions support InlineBase64 parts, portable paths, and bounded byte/count budgets.\n" +
+			"Definition format, safe part names, and content are forwarded unchanged after generic validation.\n" +
+			"Fabric validates item-specific layouts, required files, supported formats, content semantics, and dependencies.\n" +
+			"Top-level options JSON requires a definition and contains item-specific settings, not LRO wait settings.\n" +
+			"Optional sensitivity-label-settings JSON requires a nonempty labelId UUID and accepts optional sensitivityLabelApplyStrategy.\n" +
+			"Omitted label settings or strategy stay omitted; Fabric defaults the strategy to ApplyOrFail.\n" +
+			"Ignore is explicit opt-in to proceed without the label if it cannot be applied; no policy downgrade or retry is performed.\n" +
+			"Sends one creation request. A 201 response returns item metadata; 202 returns a resumable operation receipt.\n" +
+			"With sync=true, asynchronously wait up to max-wait-seconds (default 120, server maximum 600 seconds)\n" +
+			"after acceptance and retrieve the result if available. Both modes immediately return synchronous completion without polling.\n" +
+			"early-poll=true permits one probe after at most 3 seconds instead of the initial 202 Retry-After;\n" +
+			"false honors that hint. Later polls and 429/503 retries honor validated hints.\n" +
+			"Wait expiry returns last-known state, not a failed mutation; client cancellation can stop waiting sooner.\n" +
+			"Description is limited to 256 characters; naming rules depend on item type.\n" +
+			"Requires Contributor or higher workspace access and, for delegated callers, Item.ReadWrite.All or\n" +
+			"the item-specific ReadWrite.All scope. Non-Power BI items require a supported Fabric capacity and\n" +
+			"tenant/capacity settings that enable Fabric item creation; Power BI items require the appropriate license.\n" +
+			"Service-principal and managed-identity support depends on item type.\n" +
+			"Does not create dependencies, cancel Fabric operations, or resubmit creation.\n" +
+			"Only JSON/empty operation responses up to 1 MiB are supported; created item metadata is required.\n" +
+			"Acceptance is not completion. Resume using get-operation-state and get-operation-result, not another create.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Create Fabric Item", ReadOnlyHint: false, IdempotentHint: false,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type searchCatalogInput struct {
+	ContinuationToken *string `json:"continuation-token,omitempty" jsonschema:"The unchanged token returned by the previous page. Carries the original search, filter, and page size; may be sent alone and must not accompany search or filter."`
+	Filter            *string `json:"filter,omitempty" jsonschema:"The filter for the search. Supports filtering by type of entries. Supported operators: eq (Equals), ne (Not Equals), or (Logical OR), () (Parentheses for grouping). Example: \"Type eq 'Report' or Type eq 'Lakehouse'\". Supported item types include Report, Lakehouse, Notebook, Warehouse, SemanticModel, KQLDatabase, and DataPipeline; for the full list see the Catalog Search API reference at https://learn.microsoft.com/rest/api/fabric/core/catalog/search. Omit when using continuation-token."`
+	PageSize          *int    `json:"page-size,omitempty" jsonschema:"The page size that needs to be returned. Must be between 1 and 1000."`
+	Search            *string `json:"search,omitempty" jsonschema:"The text query for the search. Supports searching across display name, description and workspace name of the catalog entry. Omit when using continuation-token."`
+}
+
+func searchCatalogTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "search-catalog",
+		Description: "Searches one page of Microsoft Fabric OneLake catalog metadata across workspaces, limited to entries\n" +
+			"the calling principal can access. Find Fabric items by name, description, or workspace name, optionally\n" +
+			"filtering by item type. Returns typed entries with available workspace hierarchy and a continuation token.\n" +
+			"For the next page, send the returned continuation-token without search or filter: the token already\n" +
+			"carries the original search, filter, and page size. An explicitly supplied page-size must be 1 through 1000.\n" +
+			"Does not fetch all pages, read item data, or retry automatically. Delegated callers need Catalog.Read.All.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Search Catalog", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type getItemDefinitionInput struct {
+	EarlyPoll       *bool    `json:"early-poll,omitempty" jsonschema:"Allow one initial status probe after at most 3 seconds, even when the initial Retry-After is longer. Defaults to true. False honors the initial hint; subsequent polling and 429/503 backoff honor validated hints."`
+	Format          *string  `json:"format,omitempty" jsonschema:"Optional definition format, such as ipynb or FabricGitSource. Omit to use the item's default. Must not be empty or whitespace, must be at most 128 characters, and contain no control characters. Passed as one encoded query value; Fabric validates support. Cannot be combined with operation-id."`
+	ItemID          *string  `json:"item-id,omitempty" jsonschema:"The nonempty UUID of the Fabric item whose definition is requested. Required with workspace-id for an initial request; cannot be combined with operation-id. Names are not resolved."`
+	MaxWaitSeconds  *float64 `json:"max-wait-seconds,omitempty" jsonschema:"Finite positive local wait budget after acceptance when sync=true. Defaults to 120 seconds; maximum 600 seconds. Fractional values are allowed. Expiry returns the operation ID without saving files or canceling the Fabric operation."`
+	OperationID     *string  `json:"operation-id,omitempty" jsonschema:"Nonempty UUID from an earlier Get Item Definition receipt. After get-operation-state reports Succeeded, retrieve this definition result once with one GET and no POST or polling. The result does not identify its item or prove its provenance. Cannot be combined with workspace-id, item-id, format, or sync=true."`
+	OutputDirectory *string  `json:"output-directory,omitempty" jsonschema:"Optional new absolute local directory for the completed definition's decoded files. Its parent must exist. Never overwrites or merges a destination. Local execution only; unavailable over HTTP. Omit to return only inline definition content without writing files."`
+	Sync            *bool    `json:"sync,omitempty" jsonschema:"Wait for accepted definition retrieval, poll its state, and retrieve its result within max-wait-seconds. Defaults to false, returning an operation receipt without polling. Cannot be combined with operation-id."`
+	WorkspaceID     *string  `json:"workspace-id,omitempty" jsonschema:"The nonempty UUID of the Fabric workspace containing the item. Required with item-id for an initial request; cannot be combined with operation-id. Names are not resolved."`
+}
+
+func getItemDefinitionTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "get-item-definition",
+		Description: "Gets a Fabric item's typed definition using explicit nonempty workspace-id and item-id UUIDs.\n" +
+			"Optional format is sent to Fabric without a metadata/name lookup. Sends one POST to getDefinition.\n" +
+			"A 200 response returns definition.parts (path, payload, payloadType) and any returned format.\n" +
+			"A 202 response is a resumable operation receipt, not a definition or a saved directory.\n" +
+			"With sync=true, poll and retrieve the result within max-wait-seconds (default 120, maximum 600);\n" +
+			"early-poll permits one probe after at most 3 seconds, then validated Retry-After hints are honored.\n" +
+			"Wait expiry or caller cancellation stops local waiting, not Fabric's operation; no background polling remains.\n" +
+			"Resume with get-operation-state, then when Succeeded use this tool with operation-id alone\n" +
+			"to retrieve that result once with one GET and no POST or polling.\n" +
+			"Do not combine operation-id with workspace-id, item-id, format, or sync=true.\n" +
+			"The operation result does not contain item identity or prove which item it came from.\n" +
+			"Inline retrieval works locally and over HTTP and never creates unsolicited files.\n" +
+			"Optional output-directory exports completed parts using the existing definition file service.\n" +
+			"This requires local execution and a new absolute directory below an existing parent; it is unavailable over HTTP.\n" +
+			"Export preserves binary bytes, encodings, relative paths, empty files, and .platform, without merging or overwriting.\n" +
+			"Export failures are errors, never partial success or silent inline fallback.\n" +
+			"Because optional export writes files, this tool is excluded by read-only server filtering in every transport.\n" +
+			"Supports JSON responses up to 64 MiB, InlineBase64 parts, and the host's generic path/byte/count limits\n" +
+			"(defaults: 1024 parts, 16 MiB decoded per part, 32 MiB decoded total). Oversized content is rejected, not truncated.\n" +
+			"No per-part downloads, schema downloads, item-specific layout validation, dependency lookups, or item updates.\n" +
+			"Requires read AND write item permissions and Item.ReadWrite.All or item-specific ReadWrite.All delegated scope.\n" +
+			"Service-principal and managed-identity support depends on item type. Sensitivity labels are not in definitions;\n" +
+			"encrypted labels require the caller's applicable usage rights. Treat returned definition content as sensitive.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Get Fabric Item Definition", ReadOnlyHint: false, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+		Meta: mcp.Meta{server.SecretHint: true},
+	}
+}
+
+type updateItemDefinitionInput struct {
+	WorkspaceID         string   `json:"workspace-id" jsonschema:"The nonempty UUID of the existing Fabric workspace. Workspace names are not resolved."`
+	ItemID              string   `json:"item-id" jsonschema:"The nonempty UUID of the existing Fabric item whose entire definition will be replaced. Item names are not resolved."`
+	Definition          *string  `json:"definition,omitempty" jsonschema:"Inline definition JSON as a string: {\"parts\":[{\"path\":\"logical/path\",\"payload\":\"base64\",\"payloadType\":\"InlineBase64\"}],\"format\":\"optional format\"}. Supported in local and HTTP modes. Mutually exclusive with every definition-directory/files/format option. Supply only the definition envelope, not a file path or an API request body."`
+	DefinitionDirectory *string  `json:"definition-directory,omitempty" jsonschema:"Existing absolute local item directory containing saved definition files. Local execution only; unavailable over HTTP. Requires definition-files; never scans the folder automatically. Mutually exclusive with inline definition."`
+	DefinitionFiles     *string  `json:"definition-files,omitempty" jsonschema:"Explicit file selection as a JSON array string: [{\"partPath\":\"artifact.content.ipynb\",\"sourcePath\":\"sales.ipynb\"}]. Paths are relative to definition-directory; sourcePath defaults to partPath. Logical part paths use '/'. No wildcards or automatic enumeration. Local execution only."`
+	DefinitionFormat    *string  `json:"definition-format,omitempty" jsonschema:"Optional Fabric definition format for saved-file input only, for example ipynb, FabricGitSource, TMDL, TMSL, PBIR, or PBIR-Legacy. Requires definition-directory and definition-files. For inline input, put format inside definition JSON. Format and content are forwarded unchanged after generic validation; Fabric validates format support and item-specific layouts."`
+	EarlyPoll           *bool    `json:"early-poll,omitempty" jsonschema:"Allow one early status probe after at most 3 seconds, even if the initial 202 Retry-After is longer. Defaults to true; false honors the initial hint. Later polls and 429/503 retries honor validated hints."`
+	MaxWaitSeconds      *float64 `json:"max-wait-seconds,omitempty" jsonschema:"Finite positive local wait budget in seconds after acceptance when sync is true. Defaults to 120; maximum 600 (10 minutes). Fractional seconds are allowed. Expiry returns a resumable receipt and does not cancel Fabric's operation."`
+	Options             *string  `json:"options,omitempty" jsonschema:"The API's top-level item-specific options as a JSON object string, up to 1 MiB (1048576 UTF-8 bytes) and 32 nesting levels, with no duplicate properties. Consult the actual item type's Update Definition API for supported options. Not LRO wait settings; use sync, max-wait-seconds, and early-poll for waiting."`
+	Sync                *bool    `json:"sync,omitempty" jsonschema:"Wait asynchronously for accepted definition replacement to complete. Defaults to false, returning an operation receipt without polling. This is a no-result API: only operation state is polled, never /result."`
+	UpdateMetadata      *bool    `json:"update-metadata,omitempty" jsonschema:"Explicit true or false. Only true requests metadata updates from .platform when that part is supplied. Omit to leave the API query parameter omitted; false is sent explicitly. The tool never adds, removes, or rewrites .platform and this API never changes the item's sensitivity label."`
+}
+
+func updateItemDefinitionTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "update-item-definition",
+		Description: "Replaces the entire definition of an existing Fabric item using known nonempty workspace-id and item-id UUIDs.\n" +
+			"Requires exactly one complete definition source: inline definition JSON, or an existing local\n" +
+			"definition-directory with an explicit definition-files mapping and optional definition-format.\n" +
+			"Saved-file input reads only selected saved files on the hosting machine; HTTP callers must use inline content.\n" +
+			"This is not a changed-files patch: it never gets the old definition, merges parts, or resolves names.\n" +
+			"Shared validation checks InlineBase64 payloads, portable paths, and bounded byte/count budgets.\n" +
+			"Definition format, safe part layout, and payload bytes pass through unchanged, without item-type or format-specific rules.\n" +
+			"Fabric validates required parts, supported formats, item-type requirements, content, dependencies, and item-specific options.\n" +
+			"Optional top-level options is bounded JSON for the item's Update Definition API, not LRO wait settings.\n" +
+			"update-metadata must be explicitly true to request metadata updates from a supplied .platform part.\n" +
+			"Omission leaves that query parameter omitted. .platform is never added, removed, or rewritten.\n" +
+			"Updating a definition does not affect the sensitivity label; no label, folder, or creation properties are accepted.\n" +
+			"Sends one POST. A synchronous 200 returns a Succeeded receipt with no item/result body.\n" +
+			"A 202 returns a resumable operation receipt. With sync=true, asynchronously poll state for up to\n" +
+			"max-wait-seconds (default 120, maximum 600); confirmed Succeeded completes without a /result or Get Item call.\n" +
+			"early-poll=true permits one probe after at most 3 seconds instead of the initial Retry-After.\n" +
+			"Later polls and 429/503 read retries honor validated hints. Wait expiry preserves last-known state.\n" +
+			"Client cancellation stops only the local wait, not the Fabric operation.\n" +
+			"Resume pending updates with get-operation-state, never by resubmitting the update or requesting a result.\n" +
+			"Requires read and write item permissions and, for delegated callers, Item.ReadWrite.All or the\n" +
+			"item-specific ReadWrite.All scope. Service-principal and managed-identity support depends on item type.\n" +
+			"Does not perform preflight reads, download schemas, create dependencies, or follow arbitrary URLs.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Update Fabric Item Definition", ReadOnlyHint: false, IdempotentHint: true,
+			DestructiveHint: boolPtr(true), OpenWorldHint: boolPtr(false),
 		},
 	}
 }
