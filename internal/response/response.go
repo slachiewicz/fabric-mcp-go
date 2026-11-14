@@ -18,7 +18,8 @@ import (
 	"github.com/slachiewicz/fabric-mcp-go/internal/auth"
 )
 
-const troubleshooting = ". To mitigate this issue, please refer to the troubleshooting guidelines here at https://aka.ms/azmcp/troubleshooting."
+// Troubleshooting is the suffix upstream appends to every exception message.
+const Troubleshooting = ". To mitigate this issue, please refer to the troubleshooting guidelines here at https://aka.ms/azmcp/troubleshooting."
 
 type envelope struct {
 	Status   int    `json:"status"`
@@ -33,6 +34,12 @@ func Success(results any) *mcp.CallToolResult { return SuccessStatus(http.Status
 // SuccessStatus is Success for commands that report another 2xx status.
 func SuccessStatus(status int, results any) *mcp.CallToolResult {
 	return result(false, envelope{Status: status, Message: "Success", Results: results})
+}
+
+// SuccessMessage is SuccessStatus for commands that replace the "Success"
+// message.
+func SuccessMessage(status int, message string, results any) *mcp.CallToolResult {
+	return result(false, envelope{Status: status, Message: message, Results: results})
 }
 
 // Fail returns an error result with no results, the shape upstream uses for
@@ -64,7 +71,7 @@ func (e *HTTPError) Error() string { return e.Msg }
 func Exc(status int, typ, message, raw string) *mcp.CallToolResult {
 	return result(true, envelope{
 		Status:  status,
-		Message: message + troubleshooting,
+		Message: message + Troubleshooting,
 		Results: map[string]string{"message": raw, "type": typ},
 	})
 }
@@ -95,7 +102,7 @@ func Error(err error) *mcp.CallToolResult {
 		msg = apiErrorMessage(apiErr)
 		return result(true, envelope{
 			Status:  status,
-			Message: "Service unavailable or network connectivity issues. Details: " + msg + troubleshooting,
+			Message: "Service unavailable or network connectivity issues. Details: " + msg + Troubleshooting,
 			Results: map[string]string{"message": msg, "type": typ},
 		})
 	case errors.As(err, &httpErr):
