@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -112,14 +111,29 @@ func (a *Area) searchCatalog(ctx context.Context, _ *mcp.CallToolRequest, in sea
 
 // fabricItem ports CoreModels' FabricItem.
 type fabricItem struct {
-	ID               string     `json:"id"`
-	DisplayName      string     `json:"displayName"`
-	Description      *string    `json:"description,omitempty"`
-	Type             string     `json:"type"`
-	WorkspaceID      string     `json:"workspaceId"`
-	Definition       any        `json:"definition,omitempty"`
-	CreatedDate      *time.Time `json:"createdDate,omitempty"`
-	LastModifiedDate *time.Time `json:"lastModifiedDate,omitempty"`
+	ID               string   `json:"id"`
+	DisplayName      string   `json:"displayName"`
+	Description      *string  `json:"description,omitempty"`
+	Type             string   `json:"type"`
+	WorkspaceID      string   `json:"workspaceId"`
+	Definition       any      `json:"definition,omitempty"`
+	CreatedDate      *netDate `json:"createdDate,omitempty"`
+	LastModifiedDate *netDate `json:"lastModifiedDate,omitempty"`
+}
+
+// netDate ports a .NET DateTime: it accepts a timestamp with or without an
+// offset and writes it back as given.
+type netDate string
+
+func (d *netDate) UnmarshalJSON(b []byte) error {
+	var t netTime
+	if err := t.UnmarshalJSON(b); err != nil {
+		return err
+	}
+	var s string
+	_ = json.Unmarshal(b, &s)
+	*d = netDate(s)
+	return nil
 }
 
 const invalidItemMetadata = "Fabric reported completion but returned invalid created item metadata. Check whether creation occurred before retrying."

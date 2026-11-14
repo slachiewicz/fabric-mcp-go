@@ -440,8 +440,8 @@ func jobRunBody(executionData, jobParameters *string) ([]byte, error) {
 		for _, p := range list {
 			var obj map[string]json.RawMessage
 			var name, typ string
-			if json.Unmarshal(p, &obj) != nil || obj == nil || json.Unmarshal(obj["name"], &name) != nil ||
-				json.Unmarshal(obj["type"], &typ) != nil || obj["value"] == nil {
+			if json.Unmarshal(p, &obj) != nil || obj == nil || !isJSONString(obj["name"]) || json.Unmarshal(obj["name"], &name) != nil ||
+				!isJSONString(obj["type"]) || json.Unmarshal(obj["type"], &typ) != nil || obj["value"] == nil {
 				return nil, itemInputError("--job-parameters requires objects with string name and type fields and a value field.")
 			}
 			if utf16Len(name) > 256 || names[strings.ToLower(name)] {
@@ -449,6 +449,9 @@ func jobRunBody(executionData, jobParameters *string) ([]byte, error) {
 			}
 			names[strings.ToLower(name)] = true
 		}
+	}
+	if loneSurrogate(exec) || loneSurrogate(params) {
+		return nil, itemInputError("Job JSON input must contain valid Unicode strings and property names.")
 	}
 	body := map[string]json.RawMessage{}
 	if exec != nil {
@@ -818,7 +821,7 @@ func scheduleBody(enabled bool, configuration string, executionData *string) ([]
 		return nil, err
 	}
 	invalidJSON := itemInputError("Invalid schedule JSON. Supply valid Unicode and configuration with type, UTC start/end, localTimeZoneId, and the documented fields and limits for that type. Cron interval is in minutes, not a cron expression.")
-	if !validScheduleConfiguration(cfg) {
+	if loneSurrogate(cfg) || !validScheduleConfiguration(cfg) {
 		return nil, invalidJSON
 	}
 	var c map[string]json.RawMessage
@@ -835,6 +838,9 @@ func scheduleBody(enabled bool, configuration string, executionData *string) ([]
 	exec, err := parseJSONObject(executionData, "--execution-data", maxJSONBytes)
 	if err != nil {
 		return nil, err
+	}
+	if loneSurrogate(exec) {
+		return nil, invalidJSON
 	}
 	body := map[string]any{"enabled": enabled, "configuration": cfg}
 	if exec != nil {
@@ -1234,4 +1240,44 @@ func (a *Area) deleteItemSchedule(ctx context.Context, _ *mcp.CallToolRequest, i
 		msg += f.retry.requestGuidance()
 	}
 	return fail(f.status, msg), nil, nil
+}
+
+// isJSONString reports whether raw is a JSON string, not null.
+func isJSONString(raw json.RawMessage) bool { return bytes.HasPrefix(raw, []byte(`"`)) }
+
+// loneSurrogate reports a \u escape of an unpaired UTF-16 surrogate, which
+// Go's decoder replaces silently but .NET's lazy string decoding rejects.
+func loneSurrogate(b []byte) bool {
+	surrogate := func(i int) (rune, bool) {
+		if i+6 > len(b) || b[i] != '\\' || b[i+1] != 'u' {
+			return 0, false
+		}
+		v, err := strconv.ParseUint(string(b[i+2:i+6]), 16, 16)
+		return rune(v), err == nil
+	}
+	for i := 0; i < len(b); i++ {
+		if b[i] != '\\' {
+			continue
+		}
+		if i+1 < len(b) && b[i+1] != 'u' {
+			i++ // skip the escaped character, including an escaped backslash
+			continue
+		}
+		r, ok := surrogate(i)
+		if !ok {
+			continue
+		}
+		switch {
+		case r >= 0xD800 && r <= 0xDBFF:
+			if lo, ok := surrogate(i + 6); !ok || lo < 0xDC00 || lo > 0xDFFF {
+				return true
+			}
+			i += 11
+		case r >= 0xDC00 && r <= 0xDFFF:
+			return true
+		default:
+			i += 5
+		}
+	}
+	return false
 }
