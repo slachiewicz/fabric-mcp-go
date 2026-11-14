@@ -46,9 +46,34 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// namespaces lists the tool namespaces this harness compares. Extend as
-// more areas land in internal/tools.
-var namespaces = []string{"docs", "core", "datafactory", "onelake"}
+// namespaces lists the tool namespaces this harness compares: every one in
+// the upstream snapshot, so an area upstream adds shows up as missing tools
+// rather than going unnoticed.
+var namespaces = goldenNamespaces()
+
+// goldenNamespaces returns the namespaces of the tools in refToolsGolden,
+// sorted. Without the file it falls back to the areas this port has.
+func goldenNamespaces() []string {
+	var tools []*mcp.Tool
+	data, err := os.ReadFile(refToolsGolden)
+	if err != nil || json.Unmarshal(data, &tools) != nil {
+		return []string{"core", "datafactory", "docs", "onelake"}
+	}
+	return toolNamespaces(tools)
+}
+
+// toolNamespaces returns the sorted, distinct "<namespace>" prefixes of the
+// tools' "<namespace>_<command>" names.
+func toolNamespaces(tools []*mcp.Tool) []string {
+	var out []string
+	for _, tool := range tools {
+		if ns, _, ok := strings.Cut(tool.Name, "_"); ok && !slices.Contains(out, ns) {
+			out = append(out, ns)
+		}
+	}
+	slices.Sort(out)
+	return out
+}
 
 const (
 	ourCmdImportPath = "github.com/slachiewicz/fabric-mcp-go/cmd/fabmcp"
@@ -132,11 +157,18 @@ func TestParityCalls(t *testing.T) {
 func compareToolLists(t *testing.T, refTools, ourTools []*mcp.Tool) {
 	t.Helper()
 
-	ref := filterNamespaces(refTools, namespaces)
-	our := filterNamespaces(ourTools, namespaces)
+	// A live reference may be newer than the snapshot namespaces came from.
+	ns := namespaces
+	for _, n := range toolNamespaces(refTools) {
+		if !slices.Contains(ns, n) {
+			ns = append(slices.Clone(ns), n)
+		}
+	}
+	ref := filterNamespaces(refTools, ns)
+	our := filterNamespaces(ourTools, ns)
 
 	if diff := setDiff(toolNames(ref), toolNames(our)); diff != "" {
-		t.Errorf("tool set for namespace(s) %v differs from reference: %s", namespaces, diff)
+		t.Errorf("tool set for namespace(s) %v differs from reference: %s", ns, diff)
 	}
 
 	refByName := toolsByName(ref)
@@ -277,7 +309,9 @@ func writeGolden(t *testing.T, tools []*mcp.Tool) {
 func fetchTools(t *testing.T, ctx context.Context, label, path string, env []string) []*mcp.Tool {
 	t.Helper()
 
-	sess := startSession(t, ctx, label, path, serverArgs(), env)
+	// No --namespace filter: the snapshot -update writes must include areas
+	// this port doesn't have yet, or namespaces never learns about them.
+	sess := startSession(t, ctx, label, path, []string{"server", "start", "--mode", "all"}, env)
 	var tools []*mcp.Tool
 	for tool, err := range sess.Tools(ctx, nil) {
 		if err != nil {
