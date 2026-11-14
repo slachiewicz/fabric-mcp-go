@@ -313,3 +313,18 @@ func sameJSON(v any, want string) bool {
 	}
 	return jsonOf(v) == jsonOf(w)
 }
+
+// Fabric's operation states carry timestamps without an offset, which
+// upstream's DateTimeOffset reads as local time.
+func TestOperationStateLocalTime(t *testing.T) {
+	_, h := fake(t, map[string]reply{
+		"GET /v1/operations/" + op1: {200, nil, `{"status":"Running","createdTimeUtc":"2026-11-14T11:33:20.6490585","error":null}`},
+	})
+	cs := session(t, staticCred{}, h)
+	env, _ := call(t, cs, "core_get-operation-state", map[string]any{"operation-id": op1})
+	expect(t, env, 200, "Success")
+	got := env["results"].(map[string]any)["state"].(map[string]any)["createdTimeUtc"].(string)
+	if !strings.HasPrefix(got, "2026-11-14T11:33:20.6490585") || len(got) != len("2026-11-14T11:33:20.6490585+00:00") {
+		t.Errorf("createdTimeUtc = %q", got)
+	}
+}

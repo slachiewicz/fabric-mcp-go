@@ -241,9 +241,19 @@ func (t netTime) MarshalJSON() ([]byte, error) {
 	return json.Marshal(time.Time(t).Format("2006-01-02T15:04:05.9999999-07:00"))
 }
 
+// UnmarshalJSON ports DateTimeOffset parsing, which reads a timestamp
+// without an offset (as Fabric's operation states have) as local time.
 func (t *netTime) UnmarshalJSON(b []byte) error {
-	var tt time.Time
-	if err := json.Unmarshal(b, &tt); err != nil {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	if tt, err := time.Parse(time.RFC3339Nano, s); err == nil {
+		*t = netTime(tt)
+		return nil
+	}
+	tt, err := time.ParseInLocation("2006-01-02T15:04:05.9999999", s, time.Local)
+	if err != nil {
 		return err
 	}
 	*t = netTime(tt)
