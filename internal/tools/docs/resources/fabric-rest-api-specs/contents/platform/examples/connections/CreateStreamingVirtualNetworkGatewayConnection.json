@@ -50,8 +50,7 @@
                     "singleSignOnType": "None",
                     "connectionEncryption": "Encrypted",
                     "skipTestConnection": false
-                },
-                "myRole": "Owner"
+                }
             }
         }
     }

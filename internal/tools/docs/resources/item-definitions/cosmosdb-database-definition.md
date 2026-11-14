@@ -1,4 +1,3 @@
-  
 # Cosmos DB Database definition
   
 This article provides a breakdown of the structure for Cosmos DB Database definition item.

@@ -13,8 +13,7 @@
                         "displayName": "Lakehouse",
                         "description": "A lakehouse shared by the all teams.",
                         "type": "Lakehouse",
-                        "workspaceId": "aaaaaaaa-0000-1111-2222-bbbbbbbbbbbb",
-                        "logicalId": null
+                        "workspaceId": "aaaaaaaa-0000-1111-2222-bbbbbbbbbbbb"
                     }
                 ]
             }

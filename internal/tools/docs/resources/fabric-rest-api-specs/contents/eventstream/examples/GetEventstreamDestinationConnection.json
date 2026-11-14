@@ -7,7 +7,6 @@
     "responses": {
         "200": {
             "body": {
-                "type": "CustomEndpoint",
                 "fullyQualifiedNamespace": "namespace.servicebus.windows.net",
                 "eventHubName": "eventhub",
                 "consumerGroupName": "$Default",
