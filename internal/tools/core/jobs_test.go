@@ -50,6 +50,12 @@ func TestJobInstances(t *testing.T) {
 		"job-parameters": `[{"name":"p","type":"Text","value":1},{"name":"P","type":"Text","value":2}]`})
 	expect(t, env, 400, "--job-parameters names must be case-insensitively unique and at most 256 characters."+help)
 
+	env, _ = call(t, cs, "jobs_run-on-demand-item-job", map[string]any{"workspace-id": ws1, "item-id": item1, "job-type": "x",
+		"job-parameters": `[{"name":null,"type":"Text","value":1}]`})
+	expect(t, env, 400, "--job-parameters requires objects with string name and type fields and a value field."+help)
+	env, _ = call(t, cs, "jobs_run-on-demand-item-job", map[string]any{"workspace-id": ws1, "item-id": item1, "job-type": "x",
+		"execution-data": `{"a":"\\ud800","b":"\ud800"}`})
+	expect(t, env, 400, "Job JSON input must contain valid Unicode strings and property names."+help)
 	env, _ = call(t, cs, "jobs_get-item-job-instance", map[string]any{"workspace-id": ws1, "item-id": item1, "job-instance-id": job1})
 	expect(t, env, 200, "Success")
 	if !sameJSON(env["results"], `{"jobInstance":`+instOut+`}`) {

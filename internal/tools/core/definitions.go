@@ -481,13 +481,15 @@ func localDirectory(path string) (string, error) {
 
 // ensureNoLinks ports FabricItemDefinitionPath.EnsureNoLinks: no
 // component of path, including its ancestors, may be a link or device.
+// Windows junctions show up as ModeIrregular; upstream rejects every reparse
+// point.
 func ensureNoLinks(path string) error {
 	for cur := path; ; {
 		fi, err := os.Lstat(cur)
 		if err != nil {
 			return err
 		}
-		if fi.Mode()&(os.ModeSymlink|os.ModeDevice|os.ModeCharDevice|os.ModeNamedPipe|os.ModeSocket) != 0 {
+		if fi.Mode()&(os.ModeSymlink|os.ModeIrregular|os.ModeDevice|os.ModeCharDevice|os.ModeNamedPipe|os.ModeSocket) != 0 {
 			return message("Symbolic links, junctions, and device paths are not supported for definition files.")
 		}
 		parent := filepath.Dir(cur)
