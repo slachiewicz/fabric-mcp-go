@@ -674,3 +674,67 @@ func credentialUnavailable(err error) bool {
 	var cred *auth.CredentialError
 	return errors.As(err, &cred) && cred.Unavailable
 }
+
+// jobPageToken ports FabricCoreService.ReadJobPageContinuationToken: a
+// continuation token, and a continuation URI that, when present, carries
+// exactly that token on the collection's path. invalid is the message of
+// the JsonException a bad page raises.
+func jobPageToken(page map[string]json.RawMessage, collection *url.URL, foldPath bool, invalid string) (*string, error) {
+	tokRaw, hasToken := present(page, "continuationToken")
+	uriRaw, hasURI := present(page, "continuationUri")
+	if !hasToken {
+		if hasURI {
+			return nil, jsonError(invalid)
+		}
+		return nil, nil
+	}
+	var tok string
+	if json.Unmarshal(tokRaw, &tok) != nil || !validToken(&tok) {
+		return nil, jsonError(invalid)
+	}
+	if hasURI {
+		var uri string
+		if json.Unmarshal(uriRaw, &uri) != nil || !jobPageURI(uri, collection, tok, foldPath) {
+			return nil, jsonError(invalid)
+		}
+	}
+	return &tok, nil
+}
+
+func jobPageURI(value string, collection *url.URL, tok string, foldPath bool) bool {
+	u := matchingCollectionURI(value, collection, foldPath)
+	if u == nil {
+		return false
+	}
+	const prefix = "continuationToken="
+	if !strings.HasPrefix(u.RawQuery, prefix) || strings.Contains(u.RawQuery, "&") {
+		return false
+	}
+	got, err := url.PathUnescape(strings.ReplaceAll(u.RawQuery[len(prefix):], "+", " "))
+	if err != nil {
+		return false
+	}
+	want, _ := url.PathUnescape(encodeToken(tok))
+	return got == want
+}
+
+// jsonDepth is the nesting depth of marshaled v.
+func jsonDepth(v any) int {
+	b, _ := json.Marshal(v)
+	depth, max := 0, 0
+	dec := json.NewDecoder(bytes.NewReader(b))
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			return max
+		}
+		switch tok {
+		case json.Delim('{'), json.Delim('['):
+			if depth++; depth > max {
+				max = depth
+			}
+		case json.Delim('}'), json.Delim(']'):
+			depth--
+		}
+	}
+}
