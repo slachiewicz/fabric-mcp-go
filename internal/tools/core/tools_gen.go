@@ -1,0 +1,494 @@
+package core
+
+// Code generated from internal/parity/testdata/ref-tools.json; descriptions
+// and annotations must match upstream verbatim. Edit by regenerating.
+
+import "github.com/modelcontextprotocol/go-sdk/mcp"
+
+type listWorkspacesInput struct {
+	ContinuationToken                *string `json:"continuation-token,omitempty" jsonschema:"The continuation token returned by the preceding page. Pass it unchanged and repeat the same roles and endpoint preference to retrieve the next page. Omit for the first page."`
+	PreferWorkspaceSpecificEndpoints *bool   `json:"prefer-workspace-specific-endpoints,omitempty" jsonschema:"Whether to request workspace-specific API endpoints in the returned metadata. Omit to use the API default. This does not change the endpoint used to list workspaces."`
+	Roles                            *string `json:"roles,omitempty" jsonschema:"Filter by the calling principal's workspace roles: Admin, Member, Contributor, or Viewer, separated by commas. Role names are case-insensitive. Omit to list workspaces without a role filter."`
+}
+
+func listWorkspacesTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "list-workspaces",
+		Description: "Lists one page of Microsoft Fabric workspaces accessible to the calling principal using the Core REST management API.\n" +
+			"Use this to discover workspace IDs and inspect workspace management metadata, optionally filtering by workspace role:\n" +
+			"Admin, Member, Contributor, or Viewer. Returns IDs, display names, types, available descriptions, capacity/domain details,\n" +
+			"tags, and continuation information. Optionally request workspace-specific API endpoints.\n" +
+			"Pass the continuation token with the same filters to get another page.\n" +
+			"Unlike onelake_list-workspaces, this is management metadata, not a OneLake storage/data-plane listing.\n" +
+			"It does not search catalog items, read item data or definitions, or modify resources.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "List Fabric Workspaces", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type getWorkspaceInput struct {
+	WorkspaceID                      string `json:"workspace-id" jsonschema:"The ID of the Microsoft Fabric workspace to retrieve. Must be a nonempty UUID."`
+	PreferWorkspaceSpecificEndpoints *bool  `json:"prefer-workspace-specific-endpoints,omitempty" jsonschema:"Whether to request workspace-specific API and OneLake endpoints. Omit to preserve the service default. Returned endpoints are metadata only and are not contacted by this tool."`
+}
+
+func getWorkspaceTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "get-workspace",
+		Description: "Gets metadata for one existing Microsoft Fabric workspace using its required workspace UUID.\n" +
+			"Use this to inspect a known workspace's ID, display name, type, description, capacity, domain,\n" +
+			"workspace identity identifiers, and applied tags when available.\n" +
+			"Optionally request workspace-specific API and OneLake endpoints; returned endpoints are metadata only.\n" +
+			"Does not list workspaces or items, read item data or definitions, modify resources, or poll capacity assignments.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Get Fabric Workspace", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type createWorkspaceInput struct {
+	DisplayName string  `json:"display-name" jsonschema:"The display name of the new Microsoft Fabric workspace. Required, not empty or whitespace, and at most 256 characters. Only unused names are allowed; 'Admin monitoring' is reserved."`
+	CapacityID  *string `json:"capacity-id,omitempty" jsonschema:"The nonempty UUID of an existing capacity to assign during workspace creation. Requires capacity contributor or admin permission. Does not create a capacity or perform a separate assignment operation."`
+	Description *string `json:"description,omitempty" jsonschema:"The workspace description, at most 4000 characters. Omit to use the service default."`
+	DomainID    *string `json:"domain-id,omitempty" jsonschema:"The nonempty UUID of an existing domain to assign during workspace creation. Requires permission to assign the workspace to that domain. Does not create or look up a domain."`
+}
+
+func createWorkspaceTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "create-workspace",
+		Description: "Creates a new Microsoft Fabric workspace with a required display name and optional description.\n" +
+			"Optionally assign an existing capacity and domain by UUID in the same creation request.\n" +
+			"Returns the created workspace's management metadata and the Location header when supplied.\n" +
+			"Requires Fabric workspace-creation permission, capacity contributor/admin access when assigning a capacity,\n" +
+			"and domain assignment permission when assigning a domain; delegated callers need Workspace.ReadWrite.All.\n" +
+			"Does not provision capacities or domains, resolve names, create items, or poll capacity assignment.\n" +
+			"Creation is not idempotent and is never automatically retried. If the outcome is uncertain,\n" +
+			"check whether the workspace was created before making another creation request.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Create Fabric Workspace", ReadOnlyHint: false, IdempotentHint: false,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type updateWorkspaceInput struct {
+	WorkspaceID string  `json:"workspace-id" jsonschema:"The Microsoft Fabric workspace ID. Must be a nonempty UUID; workspace names are not accepted."`
+	Description *string `json:"description,omitempty" jsonschema:"The new workspace description, up to 4000 characters. An empty string clears the description; omit to leave unchanged."`
+	DisplayName *string `json:"display-name,omitempty" jsonschema:"The new workspace display name, up to 256 characters. Must not be empty or whitespace-only and must be unique within the tenant. Admin monitoring is reserved. Omit to leave unchanged."`
+}
+
+func updateWorkspaceTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "update-workspace",
+		Description: "Updates or renames an existing Microsoft Fabric workspace using its required workspace UUID.\n" +
+			"Supply a new display name, a new description, or both. Omitted properties remain unchanged;\n" +
+			"an empty description clears it. Display names are limited to 256 characters and descriptions\n" +
+			"to 4000 characters. Workspace names must be unique within the tenant; Admin monitoring is reserved.\n" +
+			"Returns the workspace ID, display name, type, and description when available.\n" +
+			"Requires the workspace Admin role and, for delegated callers, Workspace.ReadWrite.All.\n" +
+			"Does not change capacity, domain, identity, permissions, tags, endpoints, items, or data.\n" +
+			"Does not resolve names, fetch additional metadata, poll, or retry automatically.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Update Fabric Workspace", ReadOnlyHint: false, IdempotentHint: true,
+			DestructiveHint: boolPtr(true), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type deleteWorkspaceInput struct {
+	WorkspaceID string `json:"workspace-id" jsonschema:"The ID of the Microsoft Fabric workspace to delete. Must be a nonempty UUID. Deleting this workspace also deletes the items under it."`
+}
+
+func deleteWorkspaceTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "delete-workspace",
+		Description: "Deletes one Microsoft Fabric workspace AND the items under it. This is a destructive operation.\n" +
+			"Requires the explicit workspace UUID; workspace names and automatic target selection are not supported.\n" +
+			"The caller must have the Admin workspace role; delegated callers also need Workspace.ReadWrite.All.\n" +
+			"Returns the targeted workspace ID and a deletion acknowledgement only after Fabric reports successful completion.\n" +
+			"Does not enumerate or individually delete items, retry automatically, or poll.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Delete Fabric Workspace", ReadOnlyHint: false, IdempotentHint: true,
+			DestructiveHint: boolPtr(true), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type assignWorkspaceToCapacityInput struct {
+	WorkspaceID string `json:"workspace-id" jsonschema:"The ID of the existing Microsoft Fabric workspace, as a nonempty GUID."`
+	CapacityID  string `json:"capacity-id" jsonschema:"The ID of the target capacity, as a nonempty GUID."`
+}
+
+func assignWorkspaceToCapacityTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "assign-workspace-to-capacity",
+		Description: "Submit a request to assign an existing Microsoft Fabric workspace to a target capacity.\n" +
+			"Requires workspace-id and capacity-id as nonempty GUIDs, workspace Admin and capacity\n" +
+			"Contributor or Admin permissions, and Capacity.ReadWrite.All and Workspace.ReadWrite.All scopes.\n" +
+			"Returns 202 Accepted with the requested workspace and capacity IDs, accepted=true, and\n" +
+			"state=Pending. Acceptance does not confirm completion. Does not poll, retry, create workspaces,\n" +
+			"or provision or resize capacities. Inspect the workspace separately to check assignment progress.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Assign Fabric Workspace to Capacity", ReadOnlyHint: false, IdempotentHint: false,
+			DestructiveHint: boolPtr(true), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type listCapacitiesInput struct {
+	ContinuationToken *string `json:"continuation-token,omitempty" jsonschema:"The continuation token returned by a previous capacity listing. Pass it unchanged to retrieve the next page, or omit it for the first page."`
+}
+
+func listCapacitiesTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "list-capacities",
+		Description: "Lists one page of Microsoft Fabric capacities where the calling principal is an administrator or contributor.\n" +
+			"Use this to discover accessible capacity IDs, display names, SKUs, regions, and states.\n" +
+			"Returns capacity metadata and available continuationToken and continuationUri values.\n" +
+			"To request another page, pass the returned continuation token unchanged; omit it for the first page.\n" +
+			"Supports users, service principals, and managed identities. Delegated calls require Capacity.Read.All or Capacity.ReadWrite.All.\n" +
+			"This is the Fabric Core API, not an Azure subscription inventory or a capacity utilization report.\n" +
+			"Does not automatically retrieve additional pages, follow returned URIs, or modify capacities.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "List Fabric Capacities", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type getCapacityInput struct {
+	CapacityID string `json:"capacity-id" jsonschema:"The ID of the Microsoft Fabric capacity to retrieve. Must be a nonempty UUID."`
+}
+
+func getCapacityTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "get-capacity",
+		Description: "Gets metadata for one existing Microsoft Fabric capacity using its required capacity UUID.\n" +
+			"Use this to inspect a known capacity's ID, display name, SKU, region, and state.\n" +
+			"Requires Administrator or Contributor permission on the capacity.\n" +
+			"Does not list capacities, read billing or item data, modify resources, assign workspaces,\n" +
+			"or poll long-running operations.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Get Fabric Capacity", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type listItemsInput struct {
+	WorkspaceID       string  `json:"workspace-id" jsonschema:"The Microsoft Fabric workspace ID. Must be a nonempty UUID."`
+	ContinuationToken *string `json:"continuation-token,omitempty" jsonschema:"The continuation token returned by a previous page, copied unchanged. Keep the same workspace, type, root folder, and recursive options. Omit for the first page."`
+	Recursive         *bool   `json:"recursive,omitempty" jsonschema:"Include items in nested folders. Defaults to true; false lists only direct items in the workspace root or specified root folder."`
+	RootFolderID      *string `json:"root-folder-id,omitempty" jsonschema:"The root folder ID to list within. Must be a nonempty UUID. Omit to use the workspace root."`
+	Type              *string `json:"type,omitempty" jsonschema:"Filter by Fabric item type, such as Lakehouse, Notebook, or Report. Omit to include all types."`
+}
+
+func listItemsTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "list-items",
+		Description: "Lists one page of Microsoft Fabric item metadata in a known workspace, optionally filtered by item type or root folder.\n" +
+			"Requires a workspace UUID. Use this for a workspace or folder inventory of Lakehouses, Notebooks, Reports, and other Fabric items.\n" +
+			"Includes nested folders by default; set recursive to false for direct items only.\n" +
+			"Returns item IDs, names, types, workspace and folder IDs, other inventory metadata, and available continuation information.\n" +
+			"To retrieve another page, pass the returned continuation token with the same filters.\n" +
+			"This is the Fabric Core metadata API, not OneLake file/blob listing or cross-workspace catalog search.\n" +
+			"Does not read item data, definitions, or default identities, and does not modify resources.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "List Fabric Items", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type getItemInput struct {
+	WorkspaceID string `json:"workspace-id" jsonschema:"The ID of the Microsoft Fabric workspace containing the item. Must be a nonempty UUID."`
+	ItemID      string `json:"item-id" jsonschema:"The ID of the Microsoft Fabric item to retrieve. Must be a nonempty UUID."`
+}
+
+func getItemTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "get-item",
+		Description: "Gets metadata for one existing Microsoft Fabric item, such as a Lakehouse, Notebook, or Report.\n" +
+			"Use this to inspect an item when its workspace ID and item ID are known. Both IDs are required UUIDs.\n" +
+			"Returns the item ID, display name, description when available, type, and workspace ID.\n" +
+			"Does not return item data, definitions, or workload-specific properties, and does not modify the item.\n" +
+			"Use search-catalog to discover items when their IDs are unknown.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Get Fabric Item", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type updateItemInput struct {
+	WorkspaceID string  `json:"workspace-id" jsonschema:"The nonempty UUID of the Microsoft Fabric workspace containing the item."`
+	ItemID      string  `json:"item-id" jsonschema:"The nonempty UUID of the Microsoft Fabric item to update."`
+	Description *string `json:"description,omitempty" jsonschema:"The new item description, at most 256 characters. An empty string clears the description; omit to keep it unchanged."`
+	DisplayName *string `json:"display-name,omitempty" jsonschema:"The new item display name. Must follow the naming rules for the item's type. Omit to keep the current name."`
+}
+
+func updateItemTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "update-item",
+		Description: "Updates an existing Fabric item's display name or description and returns its metadata.\n" +
+			"Requires workspace-id and item-id UUIDs and at least one of display-name or description.\n" +
+			"Omitted properties remain unchanged; an empty description clears it. Descriptions allow at most 256 characters;\n" +
+			"display-name rules depend on item type. Does not change item definitions, data, permissions, tags, or identity.\n" +
+			"Requires read and write permission on the item. Delegated callers need Item.ReadWrite.All or the corresponding\n" +
+			"item-specific scope; service-principal and managed-identity support depends on item type.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Update Fabric Item", ReadOnlyHint: false, IdempotentHint: true,
+			DestructiveHint: boolPtr(true), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type moveItemInput struct {
+	WorkspaceID    string  `json:"workspace-id" jsonschema:"The Microsoft Fabric workspace ID. Must be a nonempty UUID; names are not resolved."`
+	ItemID         string  `json:"item-id" jsonschema:"The existing item to move. Must be a nonempty UUID. Fabric moves child items with their parent; a child cannot be moved on its own."`
+	TargetFolderID *string `json:"target-folder-id,omitempty" jsonschema:"The existing destination folder UUID in the same workspace. Omit or pass null to move to the workspace root. No destination is created or looked up."`
+}
+
+func moveItemTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "move-item",
+		Description: "Moves one existing Microsoft Fabric item within the same workspace using explicit workspace and item UUIDs.\n" +
+			"Supply target-folder-id for an existing destination folder, or omit it to move to the workspace root.\n" +
+			"Fabric moves child items with their parent; a child cannot be moved on its own (CannotMoveChildOnly).\n" +
+			"Makes exactly one POST with only optional targetFolderId. Does not discover or move a parent automatically,\n" +
+			"look up names, create folders, move across workspaces, copy data, rename, or operate on OneLake or local paths.\n" +
+			"Does not retry automatically, poll, or perform verification requests. This is not a long-running operation.\n" +
+			"Only HTTP 200 confirms movement. Returns the complete metadata collection in service order, including returned\n" +
+			"child items; it may be empty and optional metadata may be absent. Does not infer unrelated dependencies.\n" +
+			"Requires Contributor or higher workspace access; delegated callers require Workspace.ReadWrite.All.\n" +
+			"Users, service principals, and managed identities use the existing configured authentication.\n" +
+			"After an uncertain send, inspect the item separately before another move; never retry blindly.\n" +
+			"If movement is confirmed but metadata is unavailable, do not resubmit it.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Move Fabric Item", ReadOnlyHint: false, IdempotentHint: true,
+			DestructiveHint: boolPtr(true), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type deleteItemInput struct {
+	WorkspaceID string `json:"workspace-id" jsonschema:"The ID of the Microsoft Fabric workspace containing the item. Must be a nonempty UUID."`
+	ItemID      string `json:"item-id" jsonschema:"The ID of the Microsoft Fabric item to delete. Must be a nonempty UUID."`
+	HardDelete  *bool  `json:"hard-delete,omitempty" jsonschema:"Explicitly pass true to permanently delete the item; this cannot be recovered and requires workspace Admin. Omit or pass false to use Fabric's default deletion behavior, which soft-deletes only supported item types and does not guarantee recovery. When supplied, this option requires an explicit true or false value."`
+}
+
+func deleteItemTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "delete-item",
+		Description: "Deletes one Microsoft Fabric item using its required workspace UUID and item UUID.\n" +
+			"Omit hard-delete or explicitly pass false to use Fabric's default deletion behavior:\n" +
+			"soft deletion only for supported item types, without a guarantee of recovery.\n" +
+			"Explicitly pass hard-delete true to permanently delete the item; permanent deletion cannot be recovered.\n" +
+			"Soft deletion requires item write permission, and permanent deletion requires workspace Admin.\n" +
+			"Delegated callers need Item.ReadWrite.All or the item-specific write scope.\n" +
+			"Returns only the requested workspace ID, item ID, and hard-delete mode after a successful response.\n" +
+			"Does not resolve names, infer item type, retry, or fall back to permanent deletion.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Delete Fabric Item", ReadOnlyHint: false, IdempotentHint: true,
+			DestructiveHint: boolPtr(true), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type listFoldersInput struct {
+	WorkspaceID       string  `json:"workspace-id" jsonschema:"The Microsoft Fabric workspace ID. Must be a nonempty UUID; names are not resolved."`
+	ContinuationToken *string `json:"continuation-token,omitempty" jsonschema:"The unchanged continuation token from a previous page. Keep the same workspace, root folder, and recursive options. Omit for the first page. Must be valid Unicode, not blank, without control characters and at most 8,192 UTF-8 bytes. Do not supply a continuation URL."`
+	Recursive         *bool   `json:"recursive,omitempty" jsonschema:"Include nested logical workspace folders. Omission uses the API default of true; false lists only direct children. This never performs client-side folder walking."`
+	RootFolderID      *string `json:"root-folder-id,omitempty" jsonschema:"An existing root folder ID in the workspace. Must be a nonempty UUID. Omit to use the workspace root."`
+}
+
+func listFoldersTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "list-folders",
+		Description: "Lists one complete page of logical Microsoft Fabric workspace folders for an explicit workspace UUID.\n" +
+			"Optionally select a root folder UUID and recursive true or false. The API includes nested folders by default.\n" +
+			"Returns folder IDs, display names, workspace IDs, parent folder IDs when available, and any continuation token\n" +
+			"and Retry-After guidance. Parents may be outside the current page; no paths are reconstructed.\n" +
+			"Call again with the unchanged token and the same workspace, root folder, and recursive options for another page.\n" +
+			"Makes exactly one GET, without folder walking, lookups, enrichment, automatic pagination, retries, or polling.\n" +
+			"This is workspace organization metadata, not OneLake directories, local files, or item contents.\n" +
+			"Requires workspace Viewer or higher access; delegated calls require Workspace.Read.All or Workspace.ReadWrite.All.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "List Fabric Folders", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type getFolderInput struct {
+	WorkspaceID string `json:"workspace-id" jsonschema:"The ID of the Microsoft Fabric workspace containing the folder. Must be a nonempty UUID; names are not resolved."`
+	FolderID    string `json:"folder-id" jsonschema:"The ID of the logical workspace folder to retrieve. Must be a nonempty UUID, not a folder name, OneLake directory, or local path."`
+}
+
+func getFolderTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "get-folder",
+		Description: "Gets metadata for one logical Microsoft Fabric workspace folder using explicit workspace and folder UUIDs.\n" +
+			"Returns its ID, display name, workspace ID, and parent folder ID when available, plus Retry-After guidance.\n" +
+			"Makes exactly one GET without listing folders, looking up names or ancestors, enumerating children or items,\n" +
+			"reconstructing paths, enriching metadata, retrying, polling, or modifying resources.\n" +
+			"These are logical workspace folders, not OneLake directories, local paths, or item contents.\n" +
+			"Requires workspace Viewer or higher access; delegated calls require Workspace.Read.All or Workspace.ReadWrite.All.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Get Fabric Folder", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type createFolderInput struct {
+	WorkspaceID    string  `json:"workspace-id" jsonschema:"The Microsoft Fabric workspace ID. Must be a nonempty UUID; names are not resolved."`
+	DisplayName    string  `json:"display-name" jsonschema:"The name of one logical workspace folder, not a filesystem path. Must meet Fabric folder naming rules: at most 255 characters, no leading/trailing spaces, control codes, prohibited characters, or reserved names. The value is not trimmed or sanitized."`
+	ParentFolderID *string `json:"parent-folder-id,omitempty" jsonschema:"An existing parent folder ID in the workspace. Must be a nonempty UUID. Omit or supply null to create at the workspace root; no parent lookup or creation is performed."`
+}
+
+func createFolderTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "create-folder",
+		Description: "Creates one logical Microsoft Fabric workspace folder for an explicit workspace UUID and display name.\n" +
+			"Optionally supply an existing parent-folder-id UUID; omission or null creates at the workspace root.\n" +
+			"Names must meet Fabric folder naming rules and are never trimmed or sanitized.\n" +
+			"This is workspace organization, not a OneLake directory or local filesystem path.\n" +
+			"Makes exactly one POST, without parent/name lookup, duplicate checks, recursive creation, get-or-create,\n" +
+			"automatic retry, follow-up reads, or operation polling. A duplicate-name error remains a failure.\n" +
+			"HTTP 201 confirms creation and returns folder ID, display name, workspace ID, and parent ID when available.\n" +
+			"Requires Contributor or higher workspace access; delegated callers require Workspace.ReadWrite.All.\n" +
+			"Users, service principals, and managed identities use the existing configured authentication.\n" +
+			"After an uncertain send, verify the workspace separately before any new creation; never resubmit blindly.\n" +
+			"If creation is confirmed but metadata is unavailable, do not repeat the creation request.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Create Fabric Folder", ReadOnlyHint: false, IdempotentHint: false,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type updateFolderInput struct {
+	WorkspaceID string `json:"workspace-id" jsonschema:"The Microsoft Fabric workspace ID. Must be a nonempty UUID; names are not resolved."`
+	FolderID    string `json:"folder-id" jsonschema:"The existing logical workspace folder ID. Must be a nonempty UUID, not a name or filesystem path."`
+	DisplayName string `json:"display-name" jsonschema:"The required replacement folder display name. Must meet Fabric folder naming rules: 1 to 255 characters, no leading/trailing spaces, control codes, prohibited characters, or reserved names. The value is not trimmed or sanitized."`
+}
+
+func updateFolderTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "update-folder",
+		Description: "Renames one existing logical Microsoft Fabric workspace folder using explicit workspace and folder UUIDs.\n" +
+			"Requires display-name, following Fabric folder naming rules; the value is never trimmed or sanitized.\n" +
+			"Makes exactly one PATCH with only displayName. Does not move the folder, modify items or permissions,\n" +
+			"create OneLake or local directories, resolve names, check duplicates, fetch or merge existing metadata,\n" +
+			"retry automatically, or poll. A duplicate-name error remains a failure.\n" +
+			"HTTP 200 confirms the update and returns the folder's metadata snapshot, including its parent ID when available.\n" +
+			"Requires Contributor or higher workspace access; delegated callers require Workspace.ReadWrite.All.\n" +
+			"Users, service principals, and managed identities use the existing configured authentication.\n" +
+			"After an uncertain send, inspect the folder separately before another update; never retry blindly.\n" +
+			"If the update is confirmed but metadata is unavailable, do not resubmit it.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Update Fabric Folder", ReadOnlyHint: false, IdempotentHint: true,
+			DestructiveHint: boolPtr(true), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type moveFolderInput struct {
+	WorkspaceID    string  `json:"workspace-id" jsonschema:"The Microsoft Fabric workspace ID. Must be a nonempty UUID; names are not resolved."`
+	FolderID       string  `json:"folder-id" jsonschema:"The existing logical workspace folder to move. Must be a nonempty UUID, not a name or filesystem path."`
+	TargetFolderID *string `json:"target-folder-id,omitempty" jsonschema:"The existing destination folder UUID in the same workspace. Omit or pass null to move to the workspace root. Cannot be the folder being moved; Fabric validates descendant, depth, and name conflicts."`
+}
+
+func moveFolderTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "move-folder",
+		Description: "Moves one existing logical Microsoft Fabric folder within the same workspace using explicit workspace and folder UUIDs.\n" +
+			"Supply target-folder-id for an existing destination folder, or omit it to move to the workspace root.\n" +
+			"Fabric moves the folder hierarchy, including its contained folders and items, server-side.\n" +
+			"Makes exactly one POST with only optional targetFolderId, without enumerating descendants or moving items individually.\n" +
+			"Does not rename, move across workspaces, create destinations, resolve names or paths, inspect ancestors, check conflicts,\n" +
+			"modify OneLake or local directories, retry automatically, or poll. Fabric enforces hierarchy, depth, and name constraints.\n" +
+			"Only HTTP 200 confirms movement and returns the folder's metadata snapshot, including its parent ID when available.\n" +
+			"Requires Contributor or higher workspace access; delegated callers require Workspace.ReadWrite.All.\n" +
+			"Users, service principals, and managed identities use the existing configured authentication.\n" +
+			"After an uncertain send, inspect the folder separately before another move; never retry blindly.\n" +
+			"If movement is confirmed but metadata is unavailable, do not resubmit it.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Move Fabric Folder", ReadOnlyHint: false, IdempotentHint: true,
+			DestructiveHint: boolPtr(true), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type deleteFolderInput struct {
+	WorkspaceID string `json:"workspace-id" jsonschema:"The ID of the Microsoft Fabric workspace containing the folder. Must be a nonempty UUID; names are not resolved."`
+	FolderID    string `json:"folder-id" jsonschema:"The ID of the empty logical workspace folder to delete. Must be a nonempty UUID, not a folder name, OneLake directory, or local path."`
+}
+
+func deleteFolderTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "delete-folder",
+		Description: "Deletes one empty logical Microsoft Fabric workspace folder using explicit workspace and folder UUIDs.\n" +
+			"Requires normal destructive-operation consent. Fabric rejects folders containing any items or nested folders\n" +
+			"with FolderNotEmpty; soft-deleted items can also prevent deletion. Never deletes or moves folder contents.\n" +
+			"Makes exactly one DELETE without a request body, query flags, Get/List or emptiness preflight, name/path lookup,\n" +
+			"descendant enumeration, automatic emptying, retry, or follow-up verification.\n" +
+			"Only HTTP 200 confirms deletion and returns deletionStatus Deleted with the requested workspace and folder IDs,\n" +
+			"not a folder snapshot. This is not an LRO: never follows Location, polls, or retrieves operation results.\n" +
+			"These are workspace organizational folders, not OneLake directories or local paths.\n" +
+			"Requires Contributor or higher workspace access; delegated callers require Workspace.ReadWrite.All.\n" +
+			"Users, service principals, and managed identities use the existing configured authentication.\n" +
+			"No recursive, force, or hard-delete option exists. The API does not document folder recovery or a retention period.\n" +
+			"A 404 or FolderNotFound remains a failure, even after an earlier deletion.\n" +
+			"Canceling the MCP request does not undo deletion. After an uncertain send, inspect the folder separately\n" +
+			"with Get or List Folders before considering another deletion; never retry blindly.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Delete Fabric Folder", ReadOnlyHint: false, IdempotentHint: true,
+			DestructiveHint: boolPtr(true), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type getOperationStateInput struct {
+	OperationID string `json:"operation-id" jsonschema:"The nonempty operation UUID returned by the initiating Fabric API. URLs and resource names are not accepted."`
+}
+
+func getOperationStateTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "get-operation-state",
+		Description: "Reads the state of one Fabric long-running operation by operation-id UUID in a single request.\n" +
+			"Returns the status, optional progress/timestamps, safe failure code/request ID, and polling guidance.\n" +
+			"A successful state read can report a Failed operation; unknown future statuses are not completion.\n" +
+			"After Succeeded, use get-operation-result only if the initiating API produces a result.\n" +
+			"Requires the same identity, resource permissions, and delegated scopes as the initiating API.\n" +
+			"Does not poll, retry, cancel operations, follow response URLs, or resubmit the original mutation.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Get Fabric Operation State", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type getOperationResultInput struct {
+	OperationID string `json:"operation-id" jsonschema:"The nonempty operation UUID returned by the initiating Fabric API. URLs and resource names are not accepted."`
+}
+
+func getOperationResultTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "get-operation-result",
+		Description: "Reads the result of one completed Fabric long-running operation by operation-id UUID in a single request.\n" +
+			"Returns a JSON envelope with operationId, hasBody, and value; JSON null differs from an empty body.\n" +
+			"Only JSON and empty results are supported, up to 1 MiB (1,048,576 bytes). Binary results are unsupported.\n" +
+			"Use get-operation-state first to confirm Succeeded. Not every initiating API produces a result;\n" +
+			"a missing result or HTTP 404 does not establish successful no-result completion.\n" +
+			"Requires the same identity, resource permissions, and delegated scopes as the initiating API.\n" +
+			"Does not poll, retry, follow response URLs, download binary data, or resubmit the original mutation.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Get Fabric Operation Result", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}

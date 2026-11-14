@@ -62,12 +62,23 @@ type Describer interface {
 	Title() string
 }
 
+// BindMessager is implemented by an Area whose commands replace upstream's
+// option-binding error message, as FabricCoreCommand does. BindMessage
+// returns the message for tool when binding fails: missing lists the
+// missing required options ("--name"), and is empty when the failure is a
+// blank required string or a value of the wrong type; msg is the default
+// message.
+type BindMessager interface {
+	BindMessage(tool string, missing []string, msg string) string
+}
+
 // Registrar adds an area's tools to the server, applying the Options filters.
 type Registrar struct {
 	server *mcp.Server
 	opts   Options
 	area   string
-	order  *[]string // tool names in registration order, shared by all areas
+	binder BindMessager // nil unless the area implements it
+	order  *[]string    // tool names in registration order, shared by all areas
 }
 
 // Area returns the namespace the registrar is currently registering for.
@@ -102,14 +113,14 @@ func AddTool[In, Out any](r *Registrar, t *mcp.Tool, h mcp.ToolHandlerFor[In, Ou
 		}
 		var args map[string]json.RawMessage
 		if err := json.Unmarshal(raw, &args); err != nil {
-			return response.Fail(http.StatusBadRequest, "Invalid arguments: "+err.Error()), nil
+			return r.bindFail(t.Name, nil, "Invalid arguments: "+err.Error()), nil
 		}
-		if res := checkRequired(schema, args); res != nil {
-			return res, nil
+		if missing, msg := checkRequired(schema, args); msg != "" {
+			return r.bindFail(t.Name, missing, msg), nil
 		}
 		var in In
 		if err := json.Unmarshal(raw, &in); err != nil {
-			return response.Fail(http.StatusBadRequest, "Invalid arguments: "+err.Error()), nil
+			return r.bindFail(t.Name, nil, "Invalid arguments: "+err.Error()), nil
 		}
 		res, out, err := h(ctx, req, in)
 		if err != nil {
@@ -129,9 +140,19 @@ func AddTool[In, Out any](r *Registrar, t *mcp.Tool, h mcp.ToolHandlerFor[In, Ou
 	}
 }
 
+// bindFail returns the 400 result for an option-binding failure, with the
+// area's own message when it has one.
+func (r *Registrar) bindFail(tool string, missing []string, msg string) *mcp.CallToolResult {
+	if r.binder != nil {
+		msg = r.binder.BindMessage(tool, missing, msg)
+	}
+	return response.Fail(http.StatusBadRequest, msg)
+}
+
 // checkRequired ports upstream's required-option validation: first every
-// missing option, else the first blank required string.
-func checkRequired(schema *jsonschema.Schema, args map[string]json.RawMessage) *mcp.CallToolResult {
+// missing option, else the first blank required string. It returns the
+// missing options and the message, or "" when the arguments bind.
+func checkRequired(schema *jsonschema.Schema, args map[string]json.RawMessage) ([]string, string) {
 	var missing []string
 	for _, name := range schema.Required {
 		if v, ok := args[name]; !ok || string(v) == "null" {
@@ -139,16 +160,16 @@ func checkRequired(schema *jsonschema.Schema, args map[string]json.RawMessage) *
 		}
 	}
 	if len(missing) > 0 {
-		return response.Fail(http.StatusBadRequest, "Missing Required options: "+strings.Join(missing, ", "))
+		return missing, "Missing Required options: " + strings.Join(missing, ", ")
 	}
 	for _, name := range schema.Required {
 		var s string
 		if json.Unmarshal(args[name], &s) == nil && strings.TrimSpace(s) == "" {
-			return response.Fail(http.StatusBadRequest, "Option '--"+name+
-				"' was configured to require non-empty, non-whitespace values but one or more empty or whitespace values were provided.")
+			return nil, "Option '--" + name +
+				"' was configured to require non-empty, non-whitespace values but one or more empty or whitespace values were provided."
 		}
 	}
-	return nil
+	return nil, ""
 }
 
 func (r *Registrar) include(t *mcp.Tool) bool {
@@ -219,7 +240,8 @@ func buildInnerServer(opts Options, areas []Area) (*mcp.Server, []string) {
 	s := mcp.NewServer(implementation(), nil)
 	var order []string
 	for _, a := range areas {
-		a.Register(&Registrar{server: s, opts: opts, area: a.Name(), order: &order})
+		binder, _ := a.(BindMessager)
+		a.Register(&Registrar{server: s, opts: opts, area: a.Name(), binder: binder, order: &order})
 	}
 	return s, order
 }
