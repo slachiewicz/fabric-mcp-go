@@ -42,6 +42,12 @@ func SuccessMessage(status int, message string, results any) *mcp.CallToolResult
 	return result(false, envelope{Status: status, Message: message, Results: results})
 }
 
+// Status returns a result with any status, an error when the status isn't
+// 2xx, as upstream's tool loaders decide.
+func Status(status int, message string, results any) *mcp.CallToolResult {
+	return result(status < 200 || status >= 300, envelope{Status: status, Message: message, Results: results})
+}
+
 // Fail returns an error result with no results, the shape upstream uses for
 // validation failures and errors a command catches itself.
 func Fail(status int, message string) *mcp.CallToolResult {

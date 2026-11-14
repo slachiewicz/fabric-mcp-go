@@ -65,6 +65,8 @@ type failure struct {
 	notSent         bool
 	respStatus      int  // the response status the request saw; 0 when none
 	confirmed       bool // the response confirmed the mutation
+	// op is the receipt of FabricOperationCanceledException.
+	op *receipt
 }
 
 func (f *failure) Error() string { return f.msg }
@@ -665,4 +667,10 @@ func mutationFail(f *failure, t mutationText) *mcp.CallToolResult {
 		}
 	}
 	return fail(status, msg)
+}
+
+// credentialUnavailable reports a CredentialUnavailableException.
+func credentialUnavailable(err error) bool {
+	var cred *auth.CredentialError
+	return errors.As(err, &cred) && cred.Unavailable
 }

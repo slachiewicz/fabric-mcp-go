@@ -27,14 +27,37 @@ var consentSchema = &jsonschema.Schema{
 
 const consentKey = "consent"
 
-// consent ports upstream's HandleElicitationAsync for destructive tools
-// (Fabric has no secret ones): ask the user through elicitation and return
-// a result to send instead of running the tool, or nil to proceed.
+// SecretHint is the _meta key upstream sets on tools that handle sensitive
+// data (McpHelper.SecretHintMetaKey).
+const SecretHint = "SecretHint"
+
+// consent ports upstream's HandleElicitationAsync for secret and
+// destructive tools: ask the user through elicitation and return a result
+// to send instead of running the tool, or nil to proceed.
 func consent(req *mcp.CallToolRequest, t *mcp.Tool, disabled bool) *mcp.CallToolResult {
-	if t.Annotations == nil || t.Annotations.DestructiveHint == nil || !*t.Annotations.DestructiveHint {
+	secret, _ := t.Meta[SecretHint].(bool)
+	destructive := t.Annotations != nil && t.Annotations.DestructiveHint != nil && *t.Annotations.DestructiveHint
+	var reason, message string
+	switch {
+	case secret && destructive:
+		reason = "handles sensitive data and may perform destructive operations"
+		message = "⚠️ WARNING: The tool '" + t.Name + "' may expose secrets or sensitive information AND may delete or modify existing resources.\n\n" +
+			"This operation could reveal confidential data such as passwords, API keys, or certificates, " +
+			"and could permanently alter or remove Azure resources, configurations, or data.\n\n" +
+			"Do you want to continue?"
+	case secret:
+		reason = "handles sensitive data"
+		message = "⚠️ SECURITY WARNING: The tool '" + t.Name + "' may expose secrets or sensitive information.\n\n" +
+			"This operation could reveal confidential data such as passwords, API keys, certificates, or other sensitive values.\n\n" +
+			"Do you want to continue with this potentially sensitive operation?"
+	case destructive:
+		reason = "may perform destructive operations"
+		message = "⚠️ DESTRUCTIVE OPERATION WARNING: The tool '" + t.Name + "' may delete or modify existing resources.\n\n" +
+			"This operation could permanently alter or remove Azure resources, configurations, or data.\n\n" +
+			"Do you want to continue with this potentially destructive operation?"
+	default:
 		return nil
 	}
-	const reason = "may perform destructive operations"
 	if disabled {
 		slog.Warn("tool "+reason+" but elicitation is disabled via --dangerously-disable-elicitation; proceeding without user consent", "tool", t.Name)
 		return nil
@@ -48,9 +71,7 @@ func consent(req *mcp.CallToolRequest, t *mcp.Tool, disabled bool) *mcp.CallTool
 	resp, ok := req.Params.InputResponses[consentKey]
 	if !ok {
 		return &mcp.CallToolResult{InputRequests: mcp.InputRequestMap{consentKey: &mcp.ElicitParams{
-			Message: "⚠️ DESTRUCTIVE OPERATION WARNING: The tool '" + t.Name + "' may delete or modify existing resources.\n\n" +
-				"This operation could permanently alter or remove Azure resources, configurations, or data.\n\n" +
-				"Do you want to continue with this potentially destructive operation?",
+			Message:         message,
 			RequestedSchema: consentSchema,
 		}}}
 	}
