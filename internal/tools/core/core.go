@@ -115,6 +115,11 @@ func (a *Area) Register(r *server.Registrar) {
 	server.AddTool(r, deleteWorkspaceTool(), a.deleteWorkspace)
 	server.AddTool(r, getWorkspaceTool(), a.getWorkspace)
 	server.AddTool(r, listWorkspacesTool(), a.listWorkspaces)
+	server.AddTool(r, addWorkspaceRoleAssignmentTool(), a.addWorkspaceRoleAssignment)
+	server.AddTool(r, deleteWorkspaceRoleAssignmentTool(), a.deleteWorkspaceRoleAssignment)
+	server.AddTool(r, getWorkspaceRoleAssignmentTool(), a.getWorkspaceRoleAssignment)
+	server.AddTool(r, listWorkspaceRoleAssignmentsTool(), a.listWorkspaceRoleAssignments)
+	server.AddTool(r, updateWorkspaceRoleAssignmentTool(), a.updateWorkspaceRoleAssignment)
 	server.AddTool(r, updateWorkspaceTool(), a.updateWorkspace)
 }
 
@@ -129,7 +134,10 @@ var bindFallback = map[string]string{
 	"core_delete-folder":  "Invalid Fabric folder deletion. Provide explicit workspace and folder UUIDs.",
 	"core_update-item-definition": "Invalid definition update request. Provide nonempty workspace and item UUIDs, exactly one complete definition source, " +
 		"and valid options; --update-metadata requires an explicit true or false.",
-	"core_move-item": "Invalid Fabric item move. Provide workspace and item UUIDs, and an optional target folder UUID. Omit the target to use the workspace root. The request was not sent.",
+	"core_add-workspace-role-assignment":    "Invalid Fabric role-assignment creation. Supply a workspace UUID, valid principal JSON with explicit id and type, and an explicit role. The request was not sent.",
+	"core_update-workspace-role-assignment": "Invalid Fabric role-assignment update. Supply workspace and existing assignment UUIDs and an explicit replacement role. The request was not sent.",
+	"core_delete-workspace-role-assignment": "Invalid Fabric role-assignment deletion. Supply explicit workspace and existing assignment UUIDs.",
+	"core_move-item":                        "Invalid Fabric item move. Provide workspace and item UUIDs, and an optional target folder UUID. Omit the target to use the workspace root. The request was not sent.",
 }
 
 // BindMessage implements server.BindMessager, porting
@@ -146,7 +154,7 @@ func (*Area) BindMessage(tool string, missing []string, msg string) string {
 	} else {
 		msg = "Invalid Fabric Core request. Check option names and values; Boolean options must be true or false."
 	}
-	if tool == "core_delete-folder" {
+	if tool == "core_delete-folder" || tool == "core_delete-workspace-role-assignment" {
 		msg += " No DELETE request was sent."
 	}
 	return msg

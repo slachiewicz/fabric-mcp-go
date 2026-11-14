@@ -667,3 +667,132 @@ func updateItemDefinitionTool() *mcp.Tool {
 		},
 	}
 }
+
+type listWorkspaceRoleAssignmentsInput struct {
+	WorkspaceID       string  `json:"workspace-id" jsonschema:"The Microsoft Fabric workspace ID. Must be a nonempty UUID; names are not resolved."`
+	ContinuationToken *string `json:"continuation-token,omitempty" jsonschema:"The unchanged continuation token from a previous role-assignment page for the same workspace. Omit for the first page. Must be valid Unicode, not blank, without control characters and at most 8,192 UTF-8 bytes. Do not supply a continuation URL."`
+}
+
+func listWorkspaceRoleAssignmentsTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "list-workspace-role-assignments",
+		Description: "Lists one complete page of Microsoft Fabric workspace role assignments for an explicit workspace UUID.\n" +
+			"Returns assignment IDs, roles, principal IDs and types, available display names and principal details,\n" +
+			"and any continuation token and Retry-After guidance. Preserves future role and principal type strings.\n" +
+			"Call again with the unchanged token and the same workspace for another page, even after an empty page.\n" +
+			"Makes exactly one GET, without directory or Graph lookups, group-membership expansion, identity enrichment,\n" +
+			"per-row requests, automatic pagination, retries, or polling. Does not calculate effective permissions or change roles.\n" +
+			"Requires workspace Member or higher access; delegated calls require Workspace.Read.All or Workspace.ReadWrite.All.\n" +
+			"Supports users, service principals, and managed identities through the configured Fabric authentication.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "List Fabric Workspace Role Assignments", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type getWorkspaceRoleAssignmentInput struct {
+	WorkspaceID               string `json:"workspace-id" jsonschema:"The Microsoft Fabric workspace ID. Must be a nonempty UUID; names are not resolved."`
+	WorkspaceRoleAssignmentID string `json:"workspace-role-assignment-id" jsonschema:"The workspace role assignment ID. Must be a nonempty UUID. This identifies the assignment, not its principal; no lookup or ID translation is performed."`
+}
+
+func getWorkspaceRoleAssignmentTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "get-workspace-role-assignment",
+		Description: "Gets one Microsoft Fabric workspace role assignment using explicit workspace and assignment UUIDs.\n" +
+			"Returns the assignment ID, role, principal ID and type, available display name and principal details,\n" +
+			"and Retry-After guidance. Preserves future role and principal type strings. Assignment and principal IDs are independent.\n" +
+			"Makes exactly one GET, without listing assignments, translating principal IDs, directory or Graph lookups,\n" +
+			"group-membership expansion, identity enrichment, retries, or polling. Does not calculate effective permissions or change roles.\n" +
+			"Requires workspace Member or higher access; delegated calls require Workspace.Read.All or Workspace.ReadWrite.All.\n" +
+			"Supports users, service principals, and managed identities through the configured Fabric authentication.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Get Fabric Workspace Role Assignment", ReadOnlyHint: true, IdempotentHint: true,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type addWorkspaceRoleAssignmentInput struct {
+	WorkspaceID string `json:"workspace-id" jsonschema:"The Microsoft Fabric workspace ID. Must be a nonempty UUID; names are not resolved."`
+	Principal   string `json:"principal" jsonschema:"Explicit principal JSON object with a nonempty id UUID and type: User, Group, ServicePrincipal, ServicePrincipalProfile, or EntireTenant. Supply the principal ID for that type: an Entra object ID for a user, group or service principal, or the profile ID for a service principal profile; not an application/client ID, email, name, or assignment ID. EntireTenant explicitly targets all tenant users and still requires its principal UUID. Optional writable groupDetails.groupType and servicePrincipalProfileDetails.parentPrincipal are supported for their respective types. Read-only displayName, userDetails and servicePrincipalDetails are rejected. Extensible type strings are forwarded unchanged; no identity is inferred or looked up."`
+	Role        string `json:"role" jsonschema:"Explicit workspace role: Admin, Member, Contributor, or Viewer. No default, trimming, upgrade, or fallback. Extensible API role strings are sent unchanged. Members can grant Member or lower; granting Admin requires an Admin caller. Fabric enforces authorization."`
+}
+
+func addWorkspaceRoleAssignmentTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "add-workspace-role-assignment",
+		Description: "Adds one Microsoft Fabric workspace role assignment using explicit workspace-id, principal JSON, and role.\n" +
+			"The principal requires an id UUID and type; no name, email, application ID, group expansion, or identity lookup is performed.\n" +
+			"User, Group, ServicePrincipal, ServicePrincipalProfile, and EntireTenant are documented principal types.\n" +
+			"EntireTenant explicitly grants access to all tenant users. Admin, Member, Contributor, and Viewer are documented roles.\n" +
+			"Extensible type and role strings are forwarded unchanged; no default, upgrade, broadening, or permission fallback is chosen.\n" +
+			"Requires workspace Member or higher access; delegated calls require Workspace.ReadWrite.All. Members can grant Member or lower;\n" +
+			"granting Admin requires Admin access. Fabric enforces permissions and its 1,000 users/groups per workspace limit.\n" +
+			"Users, service principals, and managed identities use the configured Fabric authentication.\n" +
+			"Makes exactly one POST, without preflight List/Get, Graph calls, get-or-create, conflict updates, retries, or polling.\n" +
+			"Only HTTP 201 confirms creation. Returns the new assignment and available principal metadata; assignment and principal IDs are independent.\n" +
+			"After an uncertain send inspect assignments separately, never retry blindly. If creation is confirmed but metadata is unavailable,\n" +
+			"do not resubmit the grant. This tool is an additive permission mutation, not a read or a way to update an existing assignment.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Add Fabric Workspace Role Assignment", ReadOnlyHint: false, IdempotentHint: false,
+			DestructiveHint: boolPtr(false), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type updateWorkspaceRoleAssignmentInput struct {
+	WorkspaceID               string `json:"workspace-id" jsonschema:"The Microsoft Fabric workspace ID. Must be a nonempty UUID; names are not resolved."`
+	WorkspaceRoleAssignmentID string `json:"workspace-role-assignment-id" jsonschema:"The existing workspace role assignment ID. Must be a nonempty UUID, independent of the principal ID; no lookup or ID translation is performed."`
+	Role                      string `json:"role" jsonschema:"The explicit replacement workspace role: Admin, Member, Contributor, or Viewer. Future nonempty role strings are passed unchanged for Fabric to validate. No default, trimming, upgrade, or fallback is selected."`
+}
+
+func updateWorkspaceRoleAssignmentTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "update-workspace-role-assignment",
+		Description: "Updates one existing Microsoft Fabric workspace role assignment using explicit workspace-id, workspace-role-assignment-id, and role.\n" +
+			"Assignment and principal IDs are independent; supply the existing assignment UUID, not a principal name or an ID to translate.\n" +
+			"Admin, Member, Contributor, and Viewer are documented roles. Future nonempty role strings are forwarded unchanged.\n" +
+			"No default, trimming, upgrade, broadening, or permission fallback is selected. This can increase or reduce existing workspace access.\n" +
+			"Requires workspace Admin access; delegated calls require Workspace.ReadWrite.All. The last admin's assignment cannot be changed.\n" +
+			"Users, service principals, and managed identities use the configured Fabric authentication; Fabric enforces permissions.\n" +
+			"Makes exactly one PATCH with only role. No principal payload, preflight List/Get, directory/Graph calls, membership expansion,\n" +
+			"enrichment, create/upsert fallback, automatic conflict update, retry, polling, or follow-up verification is performed.\n" +
+			"Only HTTP 200 confirms update, returning matching assignment and role metadata with available principal details.\n" +
+			"After an uncertain send inspect the assignment separately; never retry blindly. If update is confirmed but metadata is unavailable,\n" +
+			"do not resubmit it. This is a permission-changing mutation, not a read or a way to create an assignment.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Update Fabric Workspace Role Assignment", ReadOnlyHint: false, IdempotentHint: true,
+			DestructiveHint: boolPtr(true), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
+
+type deleteWorkspaceRoleAssignmentInput struct {
+	WorkspaceID               string `json:"workspace-id" jsonschema:"The Microsoft Fabric workspace ID. Must be a nonempty UUID; names are not resolved."`
+	WorkspaceRoleAssignmentID string `json:"workspace-role-assignment-id" jsonschema:"The existing workspace role assignment ID to delete. Must be a nonempty UUID, independent of the principal ID; no lookup or ID translation is performed."`
+}
+
+func deleteWorkspaceRoleAssignmentTool() *mcp.Tool {
+	return &mcp.Tool{
+		Name: "delete-workspace-role-assignment",
+		Description: "Deletes one existing Microsoft Fabric workspace role assignment using explicit workspace-id and workspace-role-assignment-id.\n" +
+			"Assignment and principal IDs are independent; supply the existing assignment UUID, not a principal name or an ID to translate.\n" +
+			"Removes only that assignment, not the principal, group membership, workspace, or other assignments.\n" +
+			"Does not establish that the principal has no remaining effective access.\n" +
+			"Requires workspace Admin access; delegated calls require Workspace.ReadWrite.All. The last admin's assignment cannot be deleted.\n" +
+			"Users, service principals, and managed identities use the configured Fabric authentication; Fabric enforces permissions.\n" +
+			"Uses normal destructive-operation confirmation. Makes exactly one DELETE without a request body or query flags.\n" +
+			"No List/Get preflight, directory/Graph calls, name resolution, identity translation, membership expansion,\n" +
+			"cascade, bulk removal, fallback, automatic retry, or follow-up verification is performed.\n" +
+			"Only HTTP 200 confirms deletion and returns deletionStatus Deleted with the requested workspace and assignment IDs,\n" +
+			"not an assignment snapshot or an effective-access assessment. A 404 remains a failure, even after an earlier deletion.\n" +
+			"This is not a documented LRO: never follows Location, polls, or retrieves operation results.\n" +
+			"Canceling the MCP request does not undo deletion. After an uncertain send inspect the assignment separately;\n" +
+			"never retry blindly or resubmit confirmed deletion. Retry-After timing is not permission to replay the deletion.",
+		Annotations: &mcp.ToolAnnotations{
+			Title: "Delete Fabric Workspace Role Assignment", ReadOnlyHint: false, IdempotentHint: true,
+			DestructiveHint: boolPtr(true), OpenWorldHint: boolPtr(false),
+		},
+	}
+}
