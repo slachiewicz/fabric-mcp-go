@@ -489,7 +489,7 @@
           "type": "string"
         },
         "output-directory": {
-          "description": "Optional new absolute local directory for the completed definition's decoded files. Its parent must exist. Never overwrites or merges a destination. Local execution only; unavailable over HTTP. Omit to return only inline definition content without writing files.",
+          "description": "Optional new absolute local directory for the completed definition's decoded files. Its parent must exist, and no path segment may be .git. Never overwrites or merges a destination. Local execution only; unavailable over HTTP. Omit to return only inline definition content without writing files.",
           "type": "string"
         },
         "sync": {
